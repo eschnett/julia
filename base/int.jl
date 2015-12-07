@@ -740,3 +740,204 @@ for f in (:checked_add, :checked_mul)
             ($f)(($f)(x1, x2), x3, x4, x5, x6, x7, x8)
     end
 end
+
+"""
+    Base.unchecked_abs(x)
+
+Calculates `abs(x)` without any overflow checking. It is the caller's
+responsiblity to ensure that there is no overflow, and the compiler is free to
+optimize the code assuming there is no overflow.
+"""
+function unchecked_abs end
+
+"""
+    Base.unchecked_neg(x)
+
+Calculates `-x` without any overflow checking. It is the caller's responsiblity
+to ensure that there is no overflow, and the compiler is free to optimize the
+code assuming there is no overflow.
+"""
+function unchecked_neg end
+
+"""
+    Base.unchecked_add(x, y)
+
+Calculates `x+y` without any overflow checking. It is the caller's responsiblity
+to ensure that there is no overflow, and the compiler is free to optimize the
+code assuming there is no overflow.
+"""
+function unchecked_add end
+
+"""
+    Base.unchecked_sub(x, y)
+
+Calculates `x-y` without any overflow checking. It is the caller's responsiblity
+to ensure that there is no overflow, and the compiler is free to optimize the
+code assuming there is no overflow.
+"""
+function unchecked_sub end
+
+"""
+    Base.unchecked_mul(x, y)
+
+Calculates `x*y` without any overflow checking. It is the caller's responsiblity
+to ensure that there is no overflow, and the compiler is free to optimize the
+code assuming there is no overflow.
+"""
+function unchecked_mul end
+
+"""
+    Base.unchecked_div(x, y)
+
+Calculates `x÷y` without any overflow checking. It is the caller's responsiblity
+to ensure that there is no overflow, and the compiler is free to optimize the
+code assuming there is no overflow.
+"""
+function unchecked_div end
+
+"""
+    Base.unchecked_rem(x, y)
+
+Calculates `x%y` without any overflow checking. It is the caller's responsiblity
+to ensure that there is no overflow, and the compiler is free to optimize the
+code assuming there is no overflow.
+"""
+function unchecked_rem end
+
+"""
+    Base.unchecked_fld(x, y)
+
+Calculates `fld(x,y)` without any overflow checking. It is the caller's
+responsiblity to ensure that there is no overflow, and the compiler is free to
+optimize the code assuming there is no overflow.
+"""
+function unchecked_fld end
+
+"""
+    Base.unchecked_mod(x, y)
+
+Calculates `mod(x,y)` without any overflow checking. It is the caller's
+responsiblity to ensure that there is no overflow, and the compiler is free to
+optimize the code assuming there is no overflow.
+"""
+function unchecked_mod end
+
+"""
+    Base.unchecked_cld(x, y)
+
+Calculates `cld(x,y)` without any overflow checking. It is the caller's
+responsiblity to ensure that there is no overflow, and the compiler is free to
+optimize the code assuming there is no overflow.
+"""
+function unchecked_cld end
+
+const SignedIntTypes = (Int8,Int16,Int32,Int64,Int128)
+for T in SignedIntTypes
+    if WORD_SIZE == 32 && T === Int128
+        # There is a code generation bug on 32-bit Linux with LLVM 3.3
+        @eval begin
+            # use regular Int128 operations to avoid codegen bug
+            unchecked_neg(x::$T) =
+                box($T,unchecked_sneg(unbox($T,x)))
+            unchecked_add(x::$T, y::$T) =
+                box($T,unchecked_sadd(unbox($T,x), unbox($T,y)))
+            unchecked_sub(x::$T, y::$T) =
+                box($T,unchecked_ssub(unbox($T,x), unbox($T,y)))
+            unchecked_mul(x::$T, y::$T) = x * y
+            unchecked_div(x::$T, y::$T) = x ÷ y
+            unchecked_rem(x::$T, y::$T) = x % y
+        end
+    else
+        @eval begin
+            unchecked_neg(x::$T) =
+                box($T,unchecked_sneg(unbox($T,x)))
+            unchecked_add(x::$T, y::$T) =
+                box($T,unchecked_sadd(unbox($T,x), unbox($T,y)))
+            unchecked_sub(x::$T, y::$T) =
+                box($T,unchecked_ssub(unbox($T,x), unbox($T,y)))
+            unchecked_mul(x::$T, y::$T) =
+                box($T,unchecked_smul(unbox($T,x), unbox($T,y)))
+            unchecked_div(x::$T, y::$T) =
+                box($T,unchecked_sdiv(unbox($T,x), unbox($T,y)))
+            function unchecked_rem(x::$T, y::$T)
+                y == -1 && return $T(0)   # avoid overflow
+                box($T,unchecked_srem(unbox($T,x), unbox($T,y)))
+            end
+        end
+    end
+end
+function unchecked_fld{T<:Union{SignedIntTypes...}}(x::T, y::T)
+    d = unchecked_div(x,y)
+    d - (signbit(x$y) & (d*y!=x))
+end
+function unchecked_mod{T<:Union{SignedIntTypes...}}(x::T, y::T)
+    y == -1 && return T(0)   # avoid potential overflow in fld
+    x - unchecked_fld(x,y)*y
+end
+function unchecked_cld{T<:Union{SignedIntTypes...}}(x::T, y::T)
+    d = unchecked_div(x,y)
+    d + (((x>0) == (y>0)) & (d*y!=x))
+end
+
+const UnsignedIntTypes = (UInt8,UInt16,UInt32,UInt64,UInt128)
+for T in UnsignedIntTypes
+    if WORD_SIZE == 32 && T === UInt128
+        # There is a code generation bug on 32-bit Linux with LLVM 3.3
+        @eval begin
+            # use regular UInt128 operations to avoid codegen bug
+            unchecked_neg(x::$T) =
+                box($T,unchecked_uneg(unbox($T,x)))
+            unchecked_add(x::$T, y::$T) =
+                box($T,unchecked_uadd(unbox($T,x), unbox($T,y)))
+            unchecked_sub(x::$T, y::$T) =
+                box($T,unchecked_usub(unbox($T,x), unbox($T,y)))
+            unchecked_mul(x::$T, y::$T) = x * y
+            unchecked_div(x::$T, y::$T) = x ÷ y
+            unchecked_rem(x::$T, y::$T) = x % y
+        end
+    else
+        @eval begin
+            unchecked_neg(x::$T) =
+                box($T,unchecked_uneg(unbox($T,x)))
+            unchecked_add(x::$T, y::$T) =
+                box($T,unchecked_uadd(unbox($T,x), unbox($T,y)))
+            unchecked_sub(x::$T, y::$T) =
+                box($T,unchecked_usub(unbox($T,x), unbox($T,y)))
+            unchecked_mul(x::$T, y::$T) =
+                box($T,unchecked_umul(unbox($T,x), unbox($T,y)))
+            unchecked_div(x::$T, y::$T) =
+                box($T,unchecked_udiv(unbox($T,x), unbox($T,y)))
+            unchecked_rem(x::$T, y::$T) =
+                box($T,unchecked_urem(unbox($T,x), unbox($T,y)))
+        end
+    end
+end
+unchecked_fld{T<:Union{UnsignedIntTypes...}}(x::T, y::T) = unchecked_div(x,y)
+unchecked_mod{T<:Union{UnsignedIntTypes...}}(x::T, y::T) = unchecked_rem(x,y)
+function unchecked_cld{T<:Union{UnsignedIntTypes...}}(x::T, y::T)
+    d = unchecked_div(x,y)
+    d + (d*y!=x)
+end
+
+# Generic definitions
+unchecked_abs(x) = abs(x)
+
+# Handle multiple arguments
+unchecked_add(x) = x
+unchecked_mul(x) = x
+for f in (:unchecked_add, :unchecked_mul)
+    @eval begin
+        ($f){T}(x1::T, x2::T, x3::T) =
+            ($f)(($f)(x1, x2), x3)
+        ($f){T}(x1::T, x2::T, x3::T, x4::T) =
+            ($f)(($f)(x1, x2), x3, x4)
+        ($f){T}(x1::T, x2::T, x3::T, x4::T, x5::T) =
+            ($f)(($f)(x1, x2), x3, x4, x5)
+        ($f){T}(x1::T, x2::T, x3::T, x4::T, x5::T, x6::T) =
+            ($f)(($f)(x1, x2), x3, x4, x5, x6)
+        ($f){T}(x1::T, x2::T, x3::T, x4::T, x5::T, x6::T, x7::T) =
+            ($f)(($f)(x1, x2), x3, x4, x5, x6, x7)
+        ($f){T}(x1::T, x2::T, x3::T, x4::T, x5::T, x6::T, x7::T, x8::T) =
+            ($f)(($f)(x1, x2), x3, x4, x5, x6, x7, x8)
+    end
+end
