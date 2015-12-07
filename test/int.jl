@@ -198,7 +198,6 @@ for T in (Int8, Int16, Int32, Int64, Int128)
     @test_throws OverflowError checked_mul(-sqrt2, sqrt2)
     @test_throws OverflowError checked_mul(-sqrt2, -sqrt2)
 
-    #=
     @test checked_div(typemax(T), T(1)) === typemax(T)
     @test_throws DivideError checked_div(typemax(T), T(0))
     @test checked_div(typemax(T), T(-1)) === T(-typemax(T))
@@ -223,7 +222,6 @@ for T in (Int8, Int16, Int32, Int64, Int128)
     @test checked_mod(typemin(T), T(1)) === T(0)
     @test_throws DivideError checked_mod(typemin(T), T(0))
     @test checked_mod(typemin(T), T(-1)) === T(0)
-    =#
 end
 
 for T in (UInt8, UInt16, UInt32, UInt64, UInt128)
@@ -268,7 +266,6 @@ for T in (UInt8, UInt16, UInt32, UInt64, UInt128)
     @test checked_mul(T(0), T(1)) === T(0)
     @test_throws OverflowError checked_mul(sqrt2, sqrt2)
 
-    #=
     @test checked_div(typemax(T), T(1)) === typemax(T)
     @test_throws DivideError checked_div(typemax(T), T(0))
     @test checked_rem(typemax(T), T(1)) === T(0)
@@ -277,7 +274,6 @@ for T in (UInt8, UInt16, UInt32, UInt64, UInt128)
     @test_throws DivideError checked_fld(typemax(T), T(0))
     @test checked_mod(typemax(T), T(1)) === T(0)
     @test_throws DivideError checked_mod(typemax(T), T(0))
-    =#
 end
 
 @test checked_abs(BigInt(-1)) == BigInt(1)
@@ -313,7 +309,6 @@ end
 
 # unchecked operations
 
-#=
 import Base: unchecked_abs, unchecked_neg,
              unchecked_add, unchecked_sub, unchecked_mul,
              unchecked_div, unchecked_rem, unchecked_fld, unchecked_mod
@@ -426,4 +421,3 @@ for T in (UInt8, UInt16, UInt32, UInt64, UInt128)
     @test unchecked_fld(typemax(T), T(1)) === typemax(T)
     @test unchecked_mod(typemax(T), T(1)) === T(0)
 end
-=#

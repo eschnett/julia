@@ -871,7 +871,6 @@ for T in SignedIntTypes
         end
     end
 end
-unchecked_abs(x::Signed) = x
 function unchecked_fld{T<:Union{SignedIntTypes...}}(x::T, y::T)
     d = unchecked_div(x,y)
     d - (signbit(x$y) & (d*y!=x))
