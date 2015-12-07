@@ -868,41 +868,6 @@ struct math_builder {
     }
 };
 
-#if 0
-static Value *emit_checked_smod(Value *x, Value *den, jl_codectx_t *ctx)
-{
-    Type *t = den->getType();
-    raise_exception_unless(builder.CreateICmpNE(den, ConstantInt::get(t,0)),
-                           prepare_global(jldiverr_var), ctx);
-    BasicBlock *m1BB = BasicBlock::Create(getGlobalContext(),"minus1",ctx->f);
-    BasicBlock *okBB = BasicBlock::Create(getGlobalContext(),"oksmod",ctx->f);
-    BasicBlock *cont = BasicBlock::Create(getGlobalContext(),"after_smod",ctx->f);
-    PHINode *ret = PHINode::Create(t, 2);
-    builder.CreateCondBr(builder.CreateICmpEQ(den,ConstantInt::get(t,-1,true)),
-                         m1BB, okBB);
-    builder.SetInsertPoint(m1BB);
-    builder.CreateBr(cont);
-    builder.SetInsertPoint(okBB);
-
-    Value *rem = builder.CreateSRem(x,den);
-    Value *smodval =
-        builder.
-        CreateSelect(builder.CreateICmpEQ(builder.CreateICmpSLT(x,ConstantInt::get(t,0)),
-                                          builder.CreateICmpSLT(den,ConstantInt::get(t,0))),
-                     // mod == rem for arguments with same sign
-                     rem,
-                     builder.CreateSRem(builder.CreateAdd(den,rem),den));
-
-    builder.CreateBr(cont);
-    builder.SetInsertPoint(cont);
-    ret->addIncoming(// rem(typemin, -1) is undefined
-                     ConstantInt::get(t,0), m1BB);
-    ret->addIncoming(smodval, okBB);
-    builder.Insert(ret);
-    return ret;
-}
-#endif
-
 static Value *emit_untyped_intrinsic(intrinsic f, Value *x, Value *y, Value *z, size_t nargs,
                                        jl_codectx_t *ctx, jl_datatype_t* *newtyp);
 static jl_cgval_t emit_intrinsic(intrinsic f, jl_value_t **args, size_t nargs,
@@ -1285,11 +1250,6 @@ static Value *emit_untyped_intrinsic(intrinsic f, Value *x, Value *y, Value *z, 
         raise_exception_unless(builder.CreateICmpNE(den, ConstantInt::get(t,0)),
                                prepare_global(jldiverr_var), ctx);
         return builder.CreateURem(JL_INT(x), den);
-
-#if 0
-    case checked_smod:
-        return emit_smod(JL_INT(x), JL_INT(y), ctx);
-#endif
 
     case unchecked_sneg:
         return builder.CreateNSWNeg(JL_INT(x));

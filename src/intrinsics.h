@@ -84,7 +84,6 @@
     ADD_I(checked_udiv, 2) \
     ADD_I(checked_srem, 2) \
     ADD_I(checked_urem, 2) \
-    /* ADD_I(checked_smod_int, 2)*/ \
     /*  unchecked arithmetic */ \
     ADD_I(unchecked_sneg, 1) \
     ADD_I(unchecked_uneg, 1) \

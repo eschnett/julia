@@ -130,7 +130,6 @@ typealias Integer64 Union{Signed64Types...,Unsigned64Types...}
 for T in Signed64Types
     @eval div(x::$T, y::$T) = box($T,checked_sdiv(unbox($T,x),unbox($T,y)))
     @eval rem(x::$T, y::$T) = box($T,checked_srem(unbox($T,x),unbox($T,y)))
-    # @eval mod(x::$T, y::$T) = box($T,checked_smod_int(unbox($T,x),unbox($T,y)))
 end
 for T in Unsigned64Types
     @eval div(x::$T, y::$T) = box($T,checked_udiv(unbox($T,x),unbox($T,y)))
@@ -531,8 +530,6 @@ else
 
     rem(x::Int128,  y::Int128)  = box(Int128,checked_srem(unbox(Int128,x),unbox(Int128,y)))
     rem(x::UInt128, y::UInt128) = box(UInt128,checked_urem(unbox(UInt128,x),unbox(UInt128,y)))
-
-    # mod(x::Int128, y::Int128) = box(Int128,checked_smod_int(unbox(Int128,x),unbox(Int128,y)))
 end
 
 ## checked +, -, *, div, rem, fld, mod
