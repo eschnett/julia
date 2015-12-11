@@ -35,16 +35,14 @@ static void jl_init_intrinsic_functions_codegen(Module *m)
 #undef ALIAS
 }
 
-extern "C" {
-  JL_DLLEXPORT uint32_t jl_get_LLVM_VERSION(void);
-}
+extern "C" JL_DLLEXPORT uint32_t jl_get_LLVM_VERSION(void);
 JL_DLLEXPORT uint32_t jl_get_LLVM_VERSION(void)
 {
-  return 10000 * LLVM_VERSION_MAJOR + 100 * LLVM_VERSION_MINOR
+    return 10000 * LLVM_VERSION_MAJOR + 100 * LLVM_VERSION_MINOR
 #ifdef LLVM_VERSION_PATCH
-    + LLVM_VERSION_PATCH
+        + LLVM_VERSION_PATCH
 #endif
-    ;
+        ;
 }
 
 /*
