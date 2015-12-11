@@ -25,7 +25,6 @@ typealias UnsignedInt Union{UInt8,UInt16,UInt32,UInt64,UInt128}
 # the ability to handle codegen bugs in LLVM, until the code here has been
 # tested on more systems and architectures.
 
-#=
 if VersionNumber(Base.libllvm_version) >= v"3.5"
     # These unions are used for almost all unchecked functions:
     typealias BrokenSignedInt Union{}
@@ -37,21 +36,20 @@ else
     if WORD_SIZE == 32
         typealias BrokenSignedInt Union{}
         typealias BrokenUnsignedInt Union{}
-        typealias BrokenSignedIntMul Union{Int8,Int64,Int128}
-        typealias BrokenUnsignedIntMul Union{UInt8,UInt64,UInt128}
+        typealias BrokenSignedIntMul Union{} # Union{Int8,Int64,Int128}
+        typealias BrokenUnsignedIntMul Union{} # Union{UInt8,UInt64,UInt128}
     else
         typealias BrokenSignedInt Union{}
         typealias BrokenUnsignedInt Union{}
-        typealias BrokenSignedIntMul Union{Int8,Int128}
-        typealias BrokenUnsignedIntMul Union{UInt8,UInt128}
+        typealias BrokenSignedIntMul Union{} # Union{Int8,Int128}
+        typealias BrokenUnsignedIntMul Union{} # Union{UInt8,UInt128}
     end
 end
-=#
 # Use these definitions to test the non-LLVM implementations
-typealias BrokenSignedInt SignedInt
-typealias BrokenUnsignedInt UnsignedInt
-typealias BrokenSignedIntMul SignedInt
-typealias BrokenUnsignedIntMul UnsignedInt
+# typealias BrokenSignedInt SignedInt
+# typealias BrokenUnsignedInt UnsignedInt
+# typealias BrokenSignedIntMul SignedInt
+# typealias BrokenUnsignedIntMul UnsignedInt
 
 # A tight `widen`
 nextwide(::Type{Int8}) = Int16
