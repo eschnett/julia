@@ -1509,7 +1509,16 @@ JL_DLLEXPORT void jl_gc_queue_root(jl_value_t *ptr)
 {
     FOR_CURRENT_HEAP () {
         jl_taggedvalue_t *o = jl_astaggedvalue(ptr);
+#ifndef JULIA_ENABLE_THREADING
+        // Disable this assert since it can happen with multithreading (same
+        // with the ones in gc_queue_binding) when two threads are writing
+        // to the same object.
         assert(gc_bits(o) != GC_QUEUED);
+#endif
+        // The modification of the `gc_bits` is not atomic but it
+        // should be safe here since GC is not allowed to run here and we only
+        // write GC_QUEUED to the GC bits outside GC. This could cause
+        // duplicated objects in the remset but that shouldn't be a problem.
         gc_bits(o) = GC_QUEUED;
         arraylist_push(remset, ptr);
         remset_nptr++; // conservative
@@ -1520,7 +1529,10 @@ void gc_queue_binding(jl_binding_t *bnd)
 {
     FOR_CURRENT_HEAP () {
         buff_t *buf = gc_val_buf(bnd);
+#ifndef JULIA_ENABLE_THREADING
+        // Will fail for multithreading. See `jl_gc_queue_root`
         assert(gc_bits(buf) != GC_QUEUED);
+#endif
         gc_bits(buf) = GC_QUEUED;
         arraylist_push(&rem_bindings, bnd);
     }
@@ -2110,8 +2122,8 @@ JL_DLLEXPORT void jl_gc_collect(int full)
         }
 
         // 2. mark every object in a remembered binding
-        int n_bnd_refyoung = 0;
         FOR_EACH_HEAP () {
+            int n_bnd_refyoung = 0;
             for (int i = 0; i < rem_bindings.len; i++) {
                 jl_binding_t *ptr = (jl_binding_t*)rem_bindings.items[i];
                 // A null pointer can happen here when the binding is cleaned up

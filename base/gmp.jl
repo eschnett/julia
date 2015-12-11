@@ -516,7 +516,7 @@ hex(n::BigInt) = base(16, n)
 function base(b::Integer, n::BigInt)
     2 <= b <= 62 || throw(ArgumentError("base must be 2 ≤ base ≤ 62, got $b"))
     p = ccall((:__gmpz_get_str,:libgmp), Ptr{UInt8}, (Ptr{UInt8}, Cint, Ptr{BigInt}), C_NULL, b, &n)
-    len = Int(ccall(:strlen, Csize_t, (Ptr{UInt8},), p))
+    len = Int(ccall(:strlen, Csize_t, (Cstring,), p))
     ASCIIString(pointer_to_array(p,len,true))
 end
 
@@ -553,5 +553,10 @@ Base.checked_neg(x::BigInt) = -x
 Base.checked_add(a::BigInt, b::BigInt) = a + b
 Base.checked_sub(a::BigInt, b::BigInt) = a - b
 Base.checked_mul(a::BigInt, b::BigInt) = a * b
+Base.checked_div(a::BigInt, b::BigInt) = div(a, b)
+Base.checked_rem(a::BigInt, b::BigInt) = rem(a, b)
+Base.checked_fld(a::BigInt, b::BigInt) = fld(a, b)
+Base.checked_mod(a::BigInt, b::BigInt) = mod(a, b)
+Base.checked_cld(a::BigInt, b::BigInt) = cld(a, b)
 
 end # module

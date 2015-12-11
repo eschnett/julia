@@ -160,9 +160,14 @@ export
     # intrinsics module
     Intrinsics
     #ccall, cglobal, llvmcall, abs_float, add_float, add_int, and_int, ashr_int,
-    #box, bswap_int, checked_fptosi, checked_fptoui, checked_sadd,
-    #checked_smul, checked_ssub, checked_uadd, checked_umul, checked_usub,
-    #checked_sdiv, checked_srem, checked_udiv, checked_urem,
+    #box, bswap_int, checked_fptosi, checked_fptoui,
+    #checked_sadd_int, checked_ssub_int, checked_smul_int, checked_sdiv_int,
+    #checked_srem_int, checked_uadd_int, checked_usub_int, checked_umul_int,
+    #checked_udiv_int, checked_urem_int,
+    #unchecked_sneg_int, unchecked_sadd_int, unchecked_ssub_int,
+    #unchecked_smul_int, unchecked_sdiv_int, unchecked_srem_int,
+    #unchecked_uneg_int, unchecked_uadd_int, unchecked_usub_int,
+    #unchecked_umul_int, unchecked_udiv_int, unchecked_urem_int,
     #checked_trunc_sint, checked_trunc_uint, check_top_bit,
     #unchecked_sneg, unchecked_sadd, unchecked_uadd, unchecked_ssub,
     #unchecked_usub, unchecked_smul, unchecked_umul, unchecked_sdiv,

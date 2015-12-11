@@ -838,41 +838,41 @@ JL_DLLEXPORT jl_value_t *jl_check_top_bit(jl_value_t *a)
 }
 
 // checked arithmetic
-#define check_sadd(a,b) \
+#define check_sadd_int(a,b) \
         /* this test is a reduction of (b > 0) ? (a + b > typemax(a)) : (a + b < typemin(a)) ==> overflow \
          * where (a - a) == (typeof(a))0 */ \
         (b > 0) ? (a > ~((a - a + 1) << (8 * sizeof(a) - 1)) - b) : (a < ((a - a + 1) << (8 * sizeof(a) - 1)) - b)
-checked_iintrinsic_fast(LLVMAdd_sov, check_sadd, add, checked_sadd,  )
-#define check_uadd(a,b) \
+checked_iintrinsic_fast(LLVMAdd_sov, check_sadd_int, add, checked_sadd_int,  )
+#define check_uadd_int(a,b) \
         /* this test checks for (a + b) > typemax(a) ==> overflow */ \
         a >= -b
-checked_iintrinsic_fast(LLVMAdd_uov, check_uadd, add, checked_uadd, u)
-#define check_ssub(a,b) check_sadd(a,-b)
-checked_iintrinsic_fast(LLVMSub_sov, check_ssub, sub, checked_ssub,  )
-#define check_usub(a,b) \
+checked_iintrinsic_fast(LLVMAdd_uov, check_uadd_int, add, checked_uadd_int, u)
+#define check_ssub_int(a,b) check_sadd_int(a,-b)
+checked_iintrinsic_fast(LLVMSub_sov, check_ssub_int, sub, checked_ssub_int,  )
+#define check_usub_int(a,b) \
         /* this test checks for (a - b) < 0 ==> overflow */ \
         a < b
-checked_iintrinsic_fast(LLVMSub_uov, check_usub, sub, checked_usub, u)
-checked_iintrinsic_slow(LLVMMul_sov, checked_smul,  )
-checked_iintrinsic_slow(LLVMMul_uov, checked_umul, u)
-checked_iintrinsic_slow(LLVMDiv_sov, checked_sdiv,  )
-checked_iintrinsic_slow(LLVMDiv_uov, checked_udiv, u)
-checked_iintrinsic_slow(LLVMRem_sov, checked_srem,  )
-checked_iintrinsic_slow(LLVMRem_uov, checked_urem, u)
+checked_iintrinsic_fast(LLVMSub_uov, check_usub_int, sub, checked_usub_int, u)
+checked_iintrinsic_slow(LLVMMul_sov, checked_smul_int,  )
+checked_iintrinsic_slow(LLVMMul_uov, checked_umul_int, u)
+checked_iintrinsic_slow(LLVMDiv_sov, checked_sdiv_int,  )
+checked_iintrinsic_slow(LLVMDiv_uov, checked_udiv_int, u)
+checked_iintrinsic_slow(LLVMRem_sov, checked_srem_int,  )
+checked_iintrinsic_slow(LLVMRem_uov, checked_urem_int, u)
 
 // unchecked arithmetic
-un_iintrinsic_fast(LLVMNeg, neg, unchecked_sneg,  )
-un_iintrinsic_fast(LLVMNeg, neg, unchecked_uneg, u)
-bi_iintrinsic_fast(LLVMAdd, add, unchecked_sadd,  )
-bi_iintrinsic_fast(LLVMAdd, add, unchecked_uadd, u)
-bi_iintrinsic_fast(LLVMSub, sub, unchecked_ssub,  )
-bi_iintrinsic_fast(LLVMSub, sub, unchecked_usub, u)
-bi_iintrinsic_fast(LLVMMul, mul, unchecked_smul,  )
-bi_iintrinsic_fast(LLVMMul, mul, unchecked_umul, u)
-bi_iintrinsic_fast(LLVMSDiv, div, unchecked_sdiv,  )
-bi_iintrinsic_fast(LLVMUDiv, div, unchecked_udiv, u)
-bi_iintrinsic_fast(LLVMSRem, rem, unchecked_srem,  )
-bi_iintrinsic_fast(LLVMURem, rem, unchecked_urem, u)
+un_iintrinsic_fast(LLVMNeg, neg, unchecked_sneg_int,  )
+un_iintrinsic_fast(LLVMNeg, neg, unchecked_uneg_int, u)
+bi_iintrinsic_fast(LLVMAdd, add, unchecked_sadd_int,  )
+bi_iintrinsic_fast(LLVMAdd, add, unchecked_uadd_int, u)
+bi_iintrinsic_fast(LLVMSub, sub, unchecked_ssub_int,  )
+bi_iintrinsic_fast(LLVMSub, sub, unchecked_usub_int, u)
+bi_iintrinsic_fast(LLVMMul, mul, unchecked_smul_int,  )
+bi_iintrinsic_fast(LLVMMul, mul, unchecked_umul_int, u)
+bi_iintrinsic_fast(LLVMSDiv, div, unchecked_sdiv_int,  )
+bi_iintrinsic_fast(LLVMUDiv, div, unchecked_udiv_int, u)
+bi_iintrinsic_fast(LLVMSRem, rem, unchecked_srem_int,  )
+bi_iintrinsic_fast(LLVMURem, rem, unchecked_urem_int, u)
 
 JL_DLLEXPORT jl_value_t *jl_nan_dom_err(jl_value_t *a, jl_value_t *b)
 {

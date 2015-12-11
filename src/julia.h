@@ -1169,6 +1169,7 @@ JL_DLLEXPORT int jl_cpu_cores(void);
 JL_DLLEXPORT long jl_getpagesize(void);
 JL_DLLEXPORT long jl_getallocationgranularity(void);
 JL_DLLEXPORT int jl_is_debugbuild(void);
+JL_DLLEXPORT uint32_t jl_get_LLVM_VERSION(void);
 JL_DLLEXPORT jl_sym_t* jl_get_OS_NAME(void);
 JL_DLLEXPORT jl_sym_t* jl_get_ARCH(void);
 
@@ -1359,8 +1360,8 @@ JL_DLLEXPORT extern volatile sig_atomic_t jl_defer_signal;
 #define JL_SIGATOMIC_BEGIN() (JL_ATOMIC_FETCH_AND_ADD(jl_defer_signal,1))
 #define JL_SIGATOMIC_END()                                      \
     do {                                                        \
-	if (JL_ATOMIC_FETCH_AND_ADD(jl_defer_signal,-1) == 1 	    \
-		&& jl_signal_pending != 0) {			                \
+        if (JL_ATOMIC_FETCH_AND_ADD(jl_defer_signal,-1) == 1    \
+                && jl_signal_pending != 0) {                    \
             jl_signal_pending = 0;                              \
             jl_sigint_action();                                 \
         }                                                       \

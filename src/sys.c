@@ -48,6 +48,8 @@
 #include <intrin.h>
 #endif
 
+#include <llvm/Config/llvm-config.h>
+
 #ifdef __has_feature
 #if __has_feature(memory_sanitizer)
 #include <sanitizer/msan_interface.h>
@@ -724,6 +726,15 @@ JL_DLLEXPORT void jl_raise_debugger(void)
 #endif // _OS_WINDOWS_
 }
 
+JL_DLLEXPORT uint32_t jl_get_LLVM_VERSION(void)
+{
+  return 10000 * LLVM_VERSION_MAJOR + 100 * LLVM_VERSION_MINOR
+#ifdef LLVM_VERSION_PATCH
+    + LLVM_VERSION_PATCH
+#endif
+    ;
+}
+
 JL_DLLEXPORT jl_sym_t* jl_get_OS_NAME(void)
 {
 #if defined(_OS_WINDOWS_)
@@ -751,22 +762,22 @@ JL_DLLEXPORT jl_sym_t* jl_get_ARCH(void)
 JL_DLLEXPORT size_t jl_maxrss(void)
 {
 #if defined(_OS_WINDOWS_)
-	PROCESS_MEMORY_COUNTERS counter;
-	GetProcessMemoryInfo( GetCurrentProcess( ), &counter, sizeof(counter) );
-	return (size_t)counter.PeakWorkingSetSize;
+    PROCESS_MEMORY_COUNTERS counter;
+    GetProcessMemoryInfo( GetCurrentProcess( ), &counter, sizeof(counter) );
+    return (size_t)counter.PeakWorkingSetSize;
 
 #elif defined(_OS_LINUX_) || defined(_OS_DARWIN_) || defined (_OS_FREEBSD_)
-	struct rusage rusage;
-	getrusage( RUSAGE_SELF, &rusage );
+    struct rusage rusage;
+    getrusage( RUSAGE_SELF, &rusage );
 
 #if defined(_OS_LINUX_)
-	return (size_t)(rusage.ru_maxrss * 1024);
+    return (size_t)(rusage.ru_maxrss * 1024);
 #else
-	return (size_t)rusage.ru_maxrss;
+    return (size_t)rusage.ru_maxrss;
 #endif
 
 #else
-	return (size_t)0;
+    return (size_t)0;
 #endif
 }
 
