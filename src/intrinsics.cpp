@@ -824,7 +824,7 @@ static jl_cgval_t emit_pointerset(jl_value_t *e, jl_value_t *x, jl_value_t *i, j
     return mark_julia_type(thePtr, false, aty);
 }
 
-static Value *emit_checked_srem(Value *x, Value *den, jl_codectx_t *ctx)
+static Value *emit_checked_srem_int(Value *x, Value *den, jl_codectx_t *ctx)
 {
     Type *t = den->getType();
     raise_exception_unless(builder.CreateICmpNE(den, ConstantInt::get(t,0)),
@@ -1189,25 +1189,25 @@ static Value *emit_untyped_intrinsic(intrinsic f, Value *x, Value *y, Value *z, 
         CreateFAdd(builder.CreateFMul(FP(x), FP(y)), FP(z));
 #endif
 
-    case checked_sadd:
-    case checked_uadd:
-    case checked_ssub:
-    case checked_usub:
-    case checked_smul:
-    case checked_umul: {
+    case checked_sadd_int:
+    case checked_uadd_int:
+    case checked_ssub_int:
+    case checked_usub_int:
+    case checked_smul_int:
+    case checked_umul_int: {
         Value *ix = JL_INT(x); Value *iy = JL_INT(y);
         assert(ix->getType() == iy->getType());
         Value *intr =
             Intrinsic::getDeclaration(jl_Module,
-               f==checked_sadd ?
+               f==checked_sadd_int ?
                Intrinsic::sadd_with_overflow :
-               (f==checked_uadd ?
+               (f==checked_uadd_int ?
                 Intrinsic::uadd_with_overflow :
-                (f==checked_ssub ?
+                (f==checked_ssub_int ?
                  Intrinsic::ssub_with_overflow :
-                 (f==checked_usub ?
+                 (f==checked_usub_int ?
                   Intrinsic::usub_with_overflow :
-                  (f==checked_smul ?
+                  (f==checked_smul_int ?
                    Intrinsic::smul_with_overflow :
                    Intrinsic::umul_with_overflow)))),
                ArrayRef<Type*>(ix->getType()));
@@ -1221,7 +1221,7 @@ static Value *emit_untyped_intrinsic(intrinsic f, Value *x, Value *y, Value *z, 
         return builder.CreateExtractValue(res, ArrayRef<unsigned>(0));
     }
 
-    case checked_sdiv:
+    case checked_sdiv_int:
         den = JL_INT(y);
         t = den->getType();
         x = JL_INT(x);
@@ -1239,17 +1239,17 @@ static Value *emit_untyped_intrinsic(intrinsic f, Value *x, Value *y, Value *z, 
                                prepare_global(jldiverr_var), ctx);
 
         return builder.CreateSDiv(x, den);
-    case checked_udiv:
+    case checked_udiv_int:
         den = JL_INT(y);
         t = den->getType();
         raise_exception_unless(builder.CreateICmpNE(den, ConstantInt::get(t,0)),
                                prepare_global(jldiverr_var), ctx);
         return builder.CreateUDiv(JL_INT(x), den);
 
-    case checked_srem:
-        return emit_checked_srem(JL_INT(x), JL_INT(y), ctx);
+    case checked_srem_int:
+        return emit_checked_srem_int(JL_INT(x), JL_INT(y), ctx);
 
-    case checked_urem:
+    case checked_urem_int:
         den = JL_INT(y);
         t = den->getType();
         raise_exception_unless(builder.CreateICmpNE(den, ConstantInt::get(t,0)),

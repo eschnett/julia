@@ -48,6 +48,8 @@
 #include <intrin.h>
 #endif
 
+#include <llvm/Config/llvm-config.h>
+
 #ifdef __has_feature
 #if __has_feature(memory_sanitizer)
 #include <sanitizer/msan_interface.h>
@@ -722,6 +724,15 @@ JL_DLLEXPORT void jl_raise_debugger(void)
 #else
     raise(SIGTRAP);
 #endif // _OS_WINDOWS_
+}
+
+JL_DLLEXPORT uint32_t jl_get_LLVM_VERSION(void)
+{
+  return 10000 * LLVM_VERSION_MAJOR + 100 * LLVM_VERSION_MINOR
+#ifdef LLVM_VERSION_PATCH
+    + LLVM_VERSION_PATCH
+#endif
+    ;
 }
 
 JL_DLLEXPORT jl_sym_t* jl_get_OS_NAME(void)
