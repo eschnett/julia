@@ -28,18 +28,31 @@ typealias UnsignedInt Union{UInt8,UInt16,UInt32,UInt64,UInt128}
 # work-arounds for LLVM codegen bugs.) However, the comments in `base/int.jl`
 # and in issue #4905 are more pessimistic. For the time being, we thus retain
 # the ability to handle codegen bugs in LLVM, until the code here has been
-# tested on more systems and architectures.
+# tested on more systems and architectures. It also seems that things depend on
+# which compiler that was used to build LLVM (i.e. either gcc or clang).
+
+# These unions are used for most checked functions:
+#     BrokenSignedInt
+#     BrokenUnsignedInt
+# These unions are used for checked_{mul,div,rem}:
+#     BrokenSignedIntMul
+#     BrokenUnsignedIntMul
 
 # This code runs early during bootstrap, and we can't use Julia's version
 # strings yet
 const llvm_version = Int(ccall(:jl_get_LLVM_VERSION, UInt32, ()))
 if llvm_version >= 30500
-    # These unions are used for almost all checked functions:
-    typealias BrokenSignedInt Union{}
-    typealias BrokenUnsignedInt Union{}
-    # These unions are used for checked_mul:
-    typealias BrokenSignedIntMul Union{}
-    typealias BrokenUnsignedIntMul Union{}
+    if WORD_SIZE == 32
+        typealias BrokenSignedInt Union{}
+        typealias BrokenUnsignedInt Union{}
+        typealias BrokenSignedIntMul Union{Int64,Int128}
+        typealias BrokenUnsignedIntMul Union{UInt64,UInt128}
+    else
+        typealias BrokenSignedInt Union{}
+        typealias BrokenUnsignedInt Union{}
+        typealias BrokenSignedIntMul Int128
+        typealias BrokenUnsignedIntMul UInt128
+    end
 else
     if WORD_SIZE == 32
         typealias BrokenSignedInt Union{}
