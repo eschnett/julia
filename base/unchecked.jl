@@ -36,13 +36,13 @@ else
     if WORD_SIZE == 32
         typealias BrokenSignedInt Union{}
         typealias BrokenUnsignedInt Union{}
-        typealias BrokenSignedIntMul Union{} # Union{Int8,Int64,Int128}
-        typealias BrokenUnsignedIntMul Union{} # Union{UInt8,UInt64,UInt128}
+        typealias BrokenSignedIntMul Int128
+        typealias BrokenUnsignedIntMul UInt128
     else
         typealias BrokenSignedInt Union{}
         typealias BrokenUnsignedInt Union{}
-        typealias BrokenSignedIntMul Union{} # Union{Int8,Int128}
-        typealias BrokenUnsignedIntMul Union{} # Union{UInt8,UInt128}
+        typealias BrokenSignedIntMul Union{}
+        typealias BrokenUnsignedIntMul Union{}
     end
 end
 # Use these definitions to test the non-LLVM implementations
@@ -199,8 +199,8 @@ end
 function unchecked_div{T<:UnsignedInt}(x::T, y::T)
     box(T, unchecked_udiv_int(unbox(T,x), unbox(T,y)))
 end
-unchecked_div{T<:BrokenSignedInt}(x::T, y::T) = div(x, y)
-unchecked_div{T<:BrokenUnsignedInt}(x::T, y::T) = div(x, y)
+unchecked_div{T<:BrokenSignedIntMul}(x::T, y::T) = div(x, y)
+unchecked_div{T<:BrokenUnsignedIntMul}(x::T, y::T) = div(x, y)
 
 """
     Base.unchecked_rem(x, y)
@@ -220,8 +220,8 @@ end
 function unchecked_rem{T<:UnsignedInt}(x::T, y::T)
     box(T, unchecked_urem_int(unbox(T,x), unbox(T,y)))
 end
-unchecked_rem{T<:BrokenSignedInt}(x::T, y::T) = rem(x, y)
-unchecked_rem{T<:BrokenUnsignedInt}(x::T, y::T) = rem(x, y)
+unchecked_rem{T<:BrokenSignedIntMul}(x::T, y::T) = rem(x, y)
+unchecked_rem{T<:BrokenUnsignedIntMul}(x::T, y::T) = rem(x, y)
 
 """
     Base.unchecked_fld(x, y)
