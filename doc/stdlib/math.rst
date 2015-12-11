@@ -1157,6 +1157,66 @@ Mathematical Functions
 
    The overflow protection may impose a perceptible performance penalty.
 
+.. function:: Base.unchecked_abs(x)
+
+   .. Docstring generated from Julia source
+
+   Calculates ``abs(x)`` without any overflow checking. It is the caller's responsiblity to ensure that there is no overflow, and the compiler is free to optimize the code assuming there is no overflow.
+
+.. function:: Base.unchecked_neg(x)
+
+   .. Docstring generated from Julia source
+
+   Calculates ``-x`` without any overflow checking. It is the caller's responsiblity to ensure that there is no overflow, and the compiler is free to optimize the code assuming there is no overflow.
+
+.. function:: Base.unchecked_add(x, y)
+
+   .. Docstring generated from Julia source
+
+   Calculates ``x+y`` without any overflow checking. It is the caller's responsiblity to ensure that there is no overflow, and the compiler is free to optimize the code assuming there is no overflow.
+
+.. function:: Base.unchecked_sub(x, y)
+
+   .. Docstring generated from Julia source
+
+   Calculates ``x-y`` without any overflow checking. It is the caller's responsiblity to ensure that there is no overflow, and the compiler is free to optimize the code assuming there is no overflow.
+
+.. function:: Base.unchecked_mul(x, y)
+
+   .. Docstring generated from Julia source
+
+   Calculates ``x*y`` without any overflow checking. It is the caller's responsiblity to ensure that there is no overflow, and the compiler is free to optimize the code assuming there is no overflow.
+
+.. function:: Base.unchecked_div(x, y)
+
+   .. Docstring generated from Julia source
+
+   Calculates ``x÷y`` without any overflow checking. It is the caller's responsiblity to ensure that there is no overflow, and the compiler is free to optimize the code assuming there is no overflow.
+
+.. function:: Base.unchecked_rem(x, y)
+
+   .. Docstring generated from Julia source
+
+   Calculates ``x%y`` without any overflow checking. It is the caller's responsiblity to ensure that there is no overflow, and the compiler is free to optimize the code assuming there is no overflow.
+
+.. function:: Base.unchecked_fld(x, y)
+
+   .. Docstring generated from Julia source
+
+   Calculates ``fld(x,y)`` without any overflow checking. It is the caller's responsiblity to ensure that there is no overflow, and the compiler is free to optimize the code assuming there is no overflow.
+
+.. function:: Base.unchecked_mod(x, y)
+
+   .. Docstring generated from Julia source
+
+   Calculates ``mod(x,y)`` without any overflow checking. It is the caller's responsiblity to ensure that there is no overflow, and the compiler is free to optimize the code assuming there is no overflow.
+
+.. function:: Base.unchecked_cld(x, y)
+
+   .. Docstring generated from Julia source
+
+   Calculates ``cld(x,y)`` without any overflow checking. It is the caller's responsiblity to ensure that there is no overflow, and the compiler is free to optimize the code assuming there is no overflow.
+
 .. function:: abs2(x)
 
    .. Docstring generated from Julia source
