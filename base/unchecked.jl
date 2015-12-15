@@ -33,47 +33,20 @@ typealias UnsignedInt Union{UInt8,UInt16,UInt32,UInt64,UInt128}
 #     BrokenSignedIntMul
 #     BrokenUnsignedIntMul
 
-if VersionNumber(Base.libllvm_version) >= v"3.5"
-    if WORD_SIZE == 32
-        typealias BrokenSignedInt Union{}
-        typealias BrokenUnsignedInt Union{}
-        typealias BrokenSignedIntMul Int128
-        typealias BrokenUnsignedIntMul UInt128
-    else
-        typealias BrokenSignedInt Union{}
-        typealias BrokenUnsignedInt Union{}
-        typealias BrokenSignedIntMul Union{}
-        typealias BrokenUnsignedIntMul Union{}
-    end
+typealias BrokenSignedInt Union{}
+typealias BrokenUnsignedInt Union{}
+if WORD_SIZE == 32
+    typealias BrokenSignedIntMul Int128
+    typealias BrokenUnsignedIntMul UInt128
 else
-    if WORD_SIZE == 32
-        typealias BrokenSignedInt Union{}
-        typealias BrokenUnsignedInt Union{}
-        typealias BrokenSignedIntMul Int128
-        typealias BrokenUnsignedIntMul UInt128
-    else
-        typealias BrokenSignedInt Union{}
-        typealias BrokenUnsignedInt Union{}
-        typealias BrokenSignedIntMul Union{}
-        typealias BrokenUnsignedIntMul Union{}
-    end
+    typealias BrokenSignedIntMul Union{}
+    typealias BrokenUnsignedIntMul Union{}
 end
 # Use these definitions to test the non-LLVM implementations
 # typealias BrokenSignedInt SignedInt
 # typealias BrokenUnsignedInt UnsignedInt
 # typealias BrokenSignedIntMul SignedInt
 # typealias BrokenUnsignedIntMul UnsignedInt
-
-# A tight `widen`
-nextwide(::Type{Int8}) = Int16
-nextwide(::Type{Int16}) = Int32
-nextwide(::Type{Int32}) = Int64
-nextwide(::Type{Int64}) = Int128
-nextwide(::Type{UInt8}) = UInt16
-nextwide(::Type{UInt16}) = UInt32
-nextwide(::Type{UInt32}) = UInt64
-nextwide(::Type{UInt64}) = UInt128
-nextwide{T<:Integer}(x::T) = convert(nextwide(T), x)
 
 """
     Base.unchecked_neg(x)
