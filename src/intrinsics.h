@@ -84,6 +84,27 @@
     ADD_I(checked_udiv_int, 2) \
     ADD_I(checked_srem_int, 2) \
     ADD_I(checked_urem_int, 2) \
+    /* arithmetic with overflow */ \
+    ADD_I(sadd_int_with_overflow, 2) \
+    ADD_I(ssub_int_with_overflow, 2) \
+    ADD_I(smul_int_with_overflow, 2) \
+    ADD_I(uadd_int_with_overflow, 2) \
+    ADD_I(usub_int_with_overflow, 2) \
+    ADD_I(umul_int_with_overflow, 2) \
+    ADD_I(int_get_result, 1) \
+    ADD_I(int_get_overflow, 1) \
+    ADD_I(sadd_int_for_overflow, 2) \
+    ADD_I(ssub_int_for_overflow, 2) \
+    ADD_I(smul_int_for_overflow, 2) \
+    ADD_I(uadd_int_for_overflow, 2) \
+    ADD_I(usub_int_for_overflow, 2) \
+    ADD_I(umul_int_for_overflow, 2) \
+    ADD_I(sadd_int_overflow, 2) \
+    ADD_I(ssub_int_overflow, 2) \
+    ADD_I(smul_int_overflow, 2) \
+    ADD_I(uadd_int_overflow, 2) \
+    ADD_I(usub_int_overflow, 2) \
+    ADD_I(umul_int_overflow, 2) \
     /*  unchecked arithmetic */ \
     ADD_I(unchecked_sneg_int, 1) \
     ADD_I(unchecked_uneg_int, 1) \

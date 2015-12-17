@@ -302,6 +302,87 @@ int LLVMRem_uov(unsigned numbits, integerPart *pa, integerPart *pb, integerPart 
 }
 
 extern "C" JL_DLLEXPORT
+int LLVMAdd_uov_cmp(unsigned numbits, integerPart *pa, integerPart *pb) {
+    CREATE(a)
+    CREATE(b)
+    bool Overflow;
+    a.uadd_ov(b, Overflow);
+    return Overflow;
+}
+
+extern "C" JL_DLLEXPORT
+int LLVMAdd_sov_cmp(unsigned numbits, integerPart *pa, integerPart *pb) {
+    CREATE(a)
+    CREATE(b)
+    bool Overflow;
+    a.sadd_ov(b, Overflow);
+    return Overflow;
+}
+
+extern "C" JL_DLLEXPORT
+int LLVMSub_uov_cmp(unsigned numbits, integerPart *pa, integerPart *pb) {
+    CREATE(a)
+    CREATE(b)
+    bool Overflow;
+    a.usub_ov(b, Overflow);
+    return Overflow;
+}
+
+extern "C" JL_DLLEXPORT
+int LLVMSub_sov_cmp(unsigned numbits, integerPart *pa, integerPart *pb) {
+    CREATE(a)
+    CREATE(b)
+    bool Overflow;
+    a.ssub_ov(b, Overflow);
+    return Overflow;
+}
+
+extern "C" JL_DLLEXPORT
+int LLVMMul_sov_cmp(unsigned numbits, integerPart *pa, integerPart *pb) {
+    CREATE(a)
+    CREATE(b)
+    bool Overflow;
+    a.smul_ov(b, Overflow);
+    return Overflow;
+}
+
+extern "C" JL_DLLEXPORT
+int LLVMMul_uov_cmp(unsigned numbits, integerPart *pa, integerPart *pb) {
+    CREATE(a)
+    CREATE(b)
+    bool Overflow;
+    a.umul_ov(b, Overflow);
+    return Overflow;
+}
+
+extern "C" JL_DLLEXPORT
+int LLVMDiv_sov_cmp(unsigned numbits, integerPart *pa, integerPart *pb) {
+    CREATE(a)
+    CREATE(b)
+    bool Overflow;
+    a.sdiv_ov(b, Overflow);
+    return Overflow;
+}
+
+extern "C" JL_DLLEXPORT
+int LLVMDiv_uov_cmp(unsigned numbits, integerPart *pa, integerPart *pb) {
+    // unsigned division cannot overflow
+    return false;
+}
+
+extern "C" JL_DLLEXPORT
+int LLVMRem_sov_cmp(unsigned numbits, integerPart *pa, integerPart *pb) {
+    // signed remainder cannot overflow
+    return false;
+}
+
+extern "C" JL_DLLEXPORT
+int LLVMRem_uov_cmp(unsigned numbits, integerPart *pa, integerPart *pb) {
+    // unsigned remainder cannot overflow
+    return false;
+}
+
+extern "C" JL_DLLEXPORT
 void LLVMByteSwap(unsigned numbits, integerPart *pa, integerPart *pr) {
     CREATE(a)
     a = a.byteSwap();

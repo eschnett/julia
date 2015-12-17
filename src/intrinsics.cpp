@@ -1,5 +1,7 @@
 // This file is a part of Julia. License is MIT: http://julialang.org/license
 
+#include <iostream>
+
 namespace JL_I {
 #include "intrinsics.h"
 }
@@ -1223,6 +1225,110 @@ static Value *emit_untyped_intrinsic(intrinsic f, Value *x, Value *y, Value *z, 
         Value *obit = builder.CreateExtractValue(res, ArrayRef<unsigned>(1));
         raise_exception_if(obit, prepare_global(jlovferr_var), ctx);
         return builder.CreateExtractValue(res, ArrayRef<unsigned>(0));
+    }
+
+    case sadd_int_with_overflow:
+    case uadd_int_with_overflow:
+    case ssub_int_with_overflow:
+    case usub_int_with_overflow:
+    case smul_int_with_overflow:
+    case umul_int_with_overflow: {
+        // TODO: set return type to struct (or large int?)
+        Value *ix = JL_INT(x); Value *iy = JL_INT(y);
+        assert(ix->getType() == iy->getType());
+        Value *intr =
+            Intrinsic::getDeclaration(jl_Module,
+                f==sadd_int_with_overflow ?
+                Intrinsic::sadd_with_overflow :
+                (f==uadd_int_with_overflow ?
+                 Intrinsic::uadd_with_overflow :
+                 (f==ssub_int_with_overflow ?
+                  Intrinsic::ssub_with_overflow :
+                  (f==usub_int_with_overflow ?
+                   Intrinsic::usub_with_overflow :
+                   (f==smul_int_with_overflow ?
+                    Intrinsic::smul_with_overflow :
+                    Intrinsic::umul_with_overflow)))),
+               ArrayRef<Type*>(ix->getType()));
+#ifdef LLVM37
+        Value *res = builder.CreateCall(intr, {ix, iy});
+#else
+        Value *res = builder.CreateCall2(intr, ix, iy);
+#endif
+        std::cout << "with_overflow res=\n";
+        res->getType()->dump();
+        res = JL_INT(res);
+        res->getType()->dump();   // does not work
+        return res;
+    }
+
+    case int_get_result:
+        // TODO: set input type to struct?
+        // TODO: set return type to right-size int
+        return builder.CreateExtractValue(x, ArrayRef<unsigned>(0));
+    case int_get_overflow:
+        // TODO: set input type to struct?
+        *newtyp = jl_bool_type;
+        return builder.CreateExtractValue(x, ArrayRef<unsigned>(1));
+
+    case sadd_int_for_overflow:
+    case uadd_int_for_overflow:
+    case ssub_int_for_overflow:
+    case usub_int_for_overflow:
+    case smul_int_for_overflow:
+    case umul_int_for_overflow: {
+        Value *ix = JL_INT(x); Value *iy = JL_INT(y);
+        assert(ix->getType() == iy->getType());
+        Value *intr =
+            Intrinsic::getDeclaration(jl_Module,
+                f==sadd_int_for_overflow ?
+                Intrinsic::sadd_with_overflow :
+                (f==uadd_int_for_overflow ?
+                 Intrinsic::uadd_with_overflow :
+                 (f==ssub_int_for_overflow ?
+                  Intrinsic::ssub_with_overflow :
+                  (f==usub_int_for_overflow ?
+                   Intrinsic::usub_with_overflow :
+                   (f==smul_int_for_overflow ?
+                    Intrinsic::smul_with_overflow :
+                    Intrinsic::umul_with_overflow)))),
+               ArrayRef<Type*>(ix->getType()));
+#ifdef LLVM37
+        Value *res = builder.CreateCall(intr, {ix, iy});
+#else
+        Value *res = builder.CreateCall2(intr, ix, iy);
+#endif
+        return builder.CreateExtractValue(res, ArrayRef<unsigned>(0));
+    }
+    case sadd_int_overflow:
+    case uadd_int_overflow:
+    case ssub_int_overflow:
+    case usub_int_overflow:
+    case smul_int_overflow:
+    case umul_int_overflow: {
+        *newtyp = jl_bool_type;
+        Value *ix = JL_INT(x); Value *iy = JL_INT(y);
+        assert(ix->getType() == iy->getType());
+        Value *intr =
+            Intrinsic::getDeclaration(jl_Module,
+                f==sadd_int_overflow ?
+                Intrinsic::sadd_with_overflow :
+                (f==uadd_int_overflow ?
+                 Intrinsic::uadd_with_overflow :
+                 (f==ssub_int_overflow ?
+                  Intrinsic::ssub_with_overflow :
+                  (f==usub_int_overflow ?
+                   Intrinsic::usub_with_overflow :
+                   (f==smul_int_overflow ?
+                    Intrinsic::smul_with_overflow :
+                    Intrinsic::umul_with_overflow)))),
+               ArrayRef<Type*>(ix->getType()));
+#ifdef LLVM37
+        Value *res = builder.CreateCall(intr, {ix, iy});
+#else
+        Value *res = builder.CreateCall2(intr, ix, iy);
+#endif
+        return builder.CreateExtractValue(res, ArrayRef<unsigned>(1));
     }
 
     case checked_sdiv_int:

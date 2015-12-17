@@ -433,3 +433,57 @@ else
     rem(x::Int128,  y::Int128)  = box(Int128,checked_srem_int(unbox(Int128,x),unbox(Int128,y)))
     rem(x::UInt128, y::UInt128) = box(UInt128,checked_urem_int(unbox(UInt128,x),unbox(UInt128,y)))
 end
+
+# Determine whether overflow occurs during an operation
+function add_with_overflow(x::Int32, y::Int32)
+    tmp = box(Int64, sadd_int_with_overflow(unbox(Int32,x), unbox(Int32,y)))
+    res = box(Int32, int_get_result(unbox(Int64,tmp)))
+    ovf = box(Bool, int_get_overflow(unbox(Int64,tmp)))
+    res, ovf
+end
+
+# Operations optimized for overflow detection during an operation
+neg_for_overflow{T<:SignedIntTypes}(x::T) = -x
+abs_for_overflow{T<:SignedIntTypes}(x::T) = abs(x)
+add_for_overflow{T<:SignedIntTypes}(x::T, y::T) =
+    box(T, sadd_int_for_overflow(unbox(T,x), unbox(T,y)))
+sub_for_overflow{T<:SignedIntTypes}(x::T, y::T) =
+    box(T, ssub_int_for_overflow(unbox(T,x), unbox(T,y)))
+mul_for_overflow{T<:SignedIntTypes}(x::T, y::T) =
+    box(T, smul_int_for_overflow(unbox(T,x), unbox(T,y)))
+div_for_overflow{T<:SignedIntTypes}(x::T, y::T) = div(x, y)
+rem_for_overflow{T<:SignedIntTypes}(x::T, y::T) = rem(x, y)
+
+neg_for_overflow{T<:UnsignedIntTypes}(x::T) = x
+abs_for_overflow{T<:UnsignedIntTypes}(x::T) = x
+add_for_overflow{T<:UnsignedIntTypes}(x::T, y::T) =
+    box(T, uadd_int_for_overflow(unbox(T,x), unbox(T,y)))
+sub_for_overflow{T<:UnsignedIntTypes}(x::T, y::T) =
+    box(T, usub_int_for_overflow(unbox(T,x), unbox(T,y)))
+mul_for_overflow{T<:UnsignedIntTypes}(x::T, y::T) =
+    box(T, umul_int_for_overflow(unbox(T,x), unbox(T,y)))
+div_for_overflow{T<:UnsignedIntTypes}(x::T, y::T) = div(x, y)
+rem_for_overflow{T<:UnsignedIntTypes}(x::T, y::T) = rem(x, y)
+
+# Determine whether overflow occurs during an operation
+neg_overflow{T<:SignedIntTypes}(x::T) = (x < 0) & (-x < 0)
+abs_overflow{T<:SignedIntTypes}(x::T) = abs(x) < 0
+add_overflow{T<:SignedIntTypes}(x::T, y::T) =
+    box(Bool, sadd_int_overflow(unbox(T,x), unbox(T,y)))
+sub_overflow{T<:SignedIntTypes}(x::T, y::T) =
+    box(Bool, ssub_int_overflow(unbox(T,x), unbox(T,y)))
+mul_overflow{T<:SignedIntTypes}(x::T, y::T) =
+    box(Bool, smul_int_overflow(unbox(T,x), unbox(T,y)))
+div_overflow{T<:SignedIntTypes}(x::T, y::T) = (x == typemin(T)) & (y == -1)
+rem_overflow{T<:SignedIntTypes}(x::T, y::T) = false
+
+neg_overflow{T<:UnsignedIntTypes}(x::T) = x != 0
+abs_overflow{T<:UnsignedIntTypes}(x::T) = false
+add_overflow{T<:UnsignedIntTypes}(x::T, y::T) =
+    box(Bool, uadd_int_overflow(unbox(T,x), unbox(T,y)))
+sub_overflow{T<:UnsignedIntTypes}(x::T, y::T) =
+    box(Bool, usub_int_overflow(unbox(T,x), unbox(T,y)))
+mul_overflow{T<:UnsignedIntTypes}(x::T, y::T) =
+    box(Bool, umul_int_overflow(unbox(T,x), unbox(T,y)))
+div_overflow{T<:UnsignedIntTypes}(x::T, y::T) = false
+rem_overflow{T<:UnsignedIntTypes}(x::T, y::T) = false

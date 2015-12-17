@@ -428,12 +428,12 @@ bi_iintrinsic(name, u, cvtb)
 
 typedef int (*intrinsic_cmp_t)(unsigned, void*, void*);
 SELECTOR_FUNC(intrinsic_cmp)
-#define cmp_iintrinsic(name, u) \
+#define bool_iintrinsic(name, u, cvtb) \
 JL_DLLEXPORT jl_value_t *jl_##name(jl_value_t *a, jl_value_t *b) \
 { \
-    return jl_iintrinsic_2(a, b, #name, u##signbitbyte, jl_intrinsiclambda_cmp, name##_list, 0); \
+    return jl_iintrinsic_2(a, b, #name, u##signbitbyte, jl_intrinsiclambda_cmp, name##_list, cvtb); \
 }
-#define bool_iintrinsic_fast(LLVMOP, OP, name, u) \
+#define bool_iintrinsic_cnvtb_fast(LLVMOP, OP, name, u, cvtb) \
 bool_intrinsic_ctype(OP, name, 8, u##int##8_t) \
 bool_intrinsic_ctype(OP, name, 16, u##int##16_t) \
 bool_intrinsic_ctype(OP, name, 32, u##int##32_t) \
@@ -445,7 +445,14 @@ static select_intrinsic_cmp_t name##_list = { \
     jl_##name##32, \
     jl_##name##64, \
 }; \
-cmp_iintrinsic(name, u)
+bool_iintrinsic(name, u, cvtb)
+#define bool_iintrinsic_fast(LLVMOP, OP, name, u) \
+    bool_iintrinsic_cnvtb_fast(LLVMOP, OP, name, u, 0)
+#define bool_iintrinsic_slow(LLVMOP, name, u) \
+static select_intrinsic_cmp_t name##_list = { \
+    LLVMOP \
+}; \
+bool_iintrinsic(name, u, 0)
 
 typedef int (*intrinsic_checked_t)(unsigned, void*, void*, void*);
 SELECTOR_FUNC(intrinsic_checked)
@@ -859,6 +866,37 @@ checked_iintrinsic_slow(LLVMDiv_sov, checked_sdiv_int,  )
 checked_iintrinsic_slow(LLVMDiv_uov, checked_udiv_int, u)
 checked_iintrinsic_slow(LLVMRem_sov, checked_srem_int,  )
 checked_iintrinsic_slow(LLVMRem_uov, checked_urem_int, u)
+
+// arithmetic with overflow
+// TODO: These implementations are wrong!
+bi_iintrinsic_fast(LLVMAdd, add, uadd_int_with_overflow, u)
+bi_iintrinsic_fast(LLVMAdd, add, sadd_int_with_overflow,  )
+bi_iintrinsic_fast(LLVMSub, sub, usub_int_with_overflow, u)
+bi_iintrinsic_fast(LLVMSub, sub, ssub_int_with_overflow,  )
+bi_iintrinsic_fast(LLVMMul, mul, umul_int_with_overflow, u)
+bi_iintrinsic_fast(LLVMMul, mul, smul_int_with_overflow,  )
+jl_value_t *jl_int_get_result(jl_value_t *a) { return 0; }
+jl_value_t *jl_int_get_overflow(jl_value_t *a) { return 0; }
+bi_iintrinsic_fast(LLVMAdd, add, uadd_int_for_overflow, u)
+bi_iintrinsic_fast(LLVMAdd, add, sadd_int_for_overflow,  )
+bi_iintrinsic_fast(LLVMSub, sub, usub_int_for_overflow, u)
+bi_iintrinsic_fast(LLVMSub, sub, ssub_int_for_overflow,  )
+bi_iintrinsic_fast(LLVMMul, mul, umul_int_for_overflow, u)
+bi_iintrinsic_fast(LLVMMul, mul, smul_int_for_overflow,  )
+bi_iintrinsic_fast(LLVMSDiv, div, udiv_int_for_overflow, u)
+bi_iintrinsic_fast(LLVMUDiv, div, sdiv_int_for_overflow,  )
+bi_iintrinsic_fast(LLVMSRem, rem, urem_int_for_overflow, u)
+bi_iintrinsic_fast(LLVMURem, rem, srem_int_for_overflow,  )
+bool_iintrinsic_fast(LLVMAdd_uov_cmp, check_uadd_int, uadd_int_overflow, u)
+bool_iintrinsic_fast(LLVMAdd_sov_cmp, check_sadd_int, sadd_int_overflow,  )
+bool_iintrinsic_fast(LLVMSub_uov_cmp, check_usub_int, usub_int_overflow, u)
+bool_iintrinsic_fast(LLVMSub_sov_cmp, check_ssub_int, ssub_int_overflow,  )
+bool_iintrinsic_slow(LLVMMul_uov_cmp, umul_int_overflow, u)
+bool_iintrinsic_slow(LLVMMul_sov_cmp, smul_int_overflow,  )
+bool_iintrinsic_slow(LLVMDiv_uov_cmp, udiv_int_overflow, u)
+bool_iintrinsic_slow(LLVMDiv_sov_cmp, sdiv_int_overflow,  )
+bool_iintrinsic_slow(LLVMRem_uov_cmp, urem_int_overflow, u)
+bool_iintrinsic_slow(LLVMRem_sov_cmp, srem_int_overflow,  )
 
 // unchecked arithmetic
 un_iintrinsic_fast(LLVMNeg, neg, unchecked_sneg_int,  )
