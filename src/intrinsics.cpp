@@ -1118,6 +1118,7 @@ static jl_cgval_t emit_intrinsic(intrinsic f, jl_value_t **args, size_t nargs,
 static Value *emit_untyped_intrinsic(intrinsic f, Value *x, Value *y, Value *z, size_t nargs,
                                        jl_codectx_t *ctx, jl_datatype_t* *newtyp)
 {
+    static Value *overflow;
     Type *t = x->getType();
     Value *fy;
     Value *den;
@@ -1269,7 +1270,7 @@ static Value *emit_untyped_intrinsic(intrinsic f, Value *x, Value *y, Value *z, 
     case int_get_overflow:
         // TODO: set input type to struct?
         *newtyp = jl_bool_type;
-        return builder.CreateExtractValue(x, ArrayRef<unsigned>(1));
+        return builder.CreateExtractValue(overflow, ArrayRef<unsigned>(1));
 
     case sadd_int_for_overflow:
     case uadd_int_for_overflow:
@@ -1298,6 +1299,7 @@ static Value *emit_untyped_intrinsic(intrinsic f, Value *x, Value *y, Value *z, 
 #else
         Value *res = builder.CreateCall2(intr, ix, iy);
 #endif
+        overflow = res;
         return builder.CreateExtractValue(res, ArrayRef<unsigned>(0));
     }
     case sadd_int_overflow:
