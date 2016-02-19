@@ -426,7 +426,8 @@ typedef struct _jl_datatype_t {
     int32_t ninitialized;
     // hidden fields:
     uint32_t nfields;
-    uint32_t alignment : 29;  // strictest alignment over all fields
+    uint32_t alignment : 28;  // strictest alignment over all fields
+    uint32_t isvector : 1;    // is represented as LLVM vector
     uint32_t haspadding : 1;  // has internal undefined bytes
     uint32_t fielddesc_type : 2; // 0 -> 8, 1 -> 16, 2 -> 32
     uint32_t uid;

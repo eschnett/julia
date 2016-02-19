@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <stdio.h> // TODO
 #ifdef _OS_WINDOWS_
 #include <malloc.h>
 #endif
@@ -2112,6 +2113,9 @@ static jl_value_t *inst_datatype(jl_datatype_t *dt, jl_svec_t *p, jl_value_t **i
     ndt->ditype = NULL;
     ndt->size = 0;
     ndt->alignment = 1;
+    ndt->isvector = dt->isvector;
+    fprintf(stderr, "[inst_datatype: name=%s, isvector=%d addr=%p]\n",
+        jl_symbol_name(ndt->name->name), ndt->isvector, ndt);
 
     // assign uid as early as possible
     if (cacheable && !ndt->abstract && ndt->uid==0)

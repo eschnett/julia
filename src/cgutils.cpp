@@ -900,10 +900,12 @@ static Value *julia_binding_gv(jl_binding_t *b)
 
 // --- mapping between julia and llvm types ---
 
-static Type *julia_struct_to_llvm(jl_value_t *jt, bool *isboxed);
+static Type *julia_struct_to_llvm(jl_value_t *jt, bool *isboxed,
+    bool createvector=false);
 
 extern "C" {
-JL_DLLEXPORT Type *julia_type_to_llvm(jl_value_t *jt, bool *isboxed)
+JL_DLLEXPORT Type *julia_type_to_llvm(jl_value_t *jt, bool *isboxed,
+    bool createvector)
 {
     // this function converts a Julia Type into the equivalent LLVM type
     if (isboxed) *isboxed = false;
@@ -913,6 +915,9 @@ JL_DLLEXPORT Type *julia_type_to_llvm(jl_value_t *jt, bool *isboxed)
         if (isboxed) *isboxed = true;
         return T_pjlvalue;
     }
+    fprintf(stderr,
+        "[julia_type_to_llvm(type.name=%s, addr=%p): createvector=%d, isvector=%d]\n",
+        jl_symbol_name(((jl_datatype_t*)jt)->name->name), jt, createvector, ((jl_datatype_t*)jt)->isvector);
     if (jl_is_cpointer_type(jt)) {
         Type *lt = julia_type_to_llvm(jl_tparam0(jt));
         if (lt == NULL)
@@ -942,14 +947,15 @@ JL_DLLEXPORT Type *julia_type_to_llvm(jl_value_t *jt, bool *isboxed)
         if (((jl_datatype_t*)jt)->size == 0) {
             return T_void;
         }
-        return julia_struct_to_llvm(jt, isboxed);
+        return julia_struct_to_llvm(jt, isboxed, createvector);
     }
     if (isboxed) *isboxed = true;
     return T_pjlvalue;
 }
 }
 
-static Type *julia_struct_to_llvm(jl_value_t *jt, bool *isboxed)
+static Type *julia_struct_to_llvm(jl_value_t *jt, bool *isboxed,
+    bool createvector)
 {
     // this function converts a Julia Type into the equivalent LLVM struct
     // use this where C-compatible (unboxed) structs are desired
@@ -960,6 +966,10 @@ static Type *julia_struct_to_llvm(jl_value_t *jt, bool *isboxed)
         if (!jl_is_leaf_type(jt))
             return NULL;
         jl_datatype_t *jst = (jl_datatype_t*)jt;
+        fprintf(stderr,
+            "[julia_struct_to_llvm(type.name=%s, addr=%p): createvector=%d, isvector=%d]\n",
+            jl_symbol_name(jst->name->name), jst, createvector, jst->isvector);
+        createvector |= jst->isvector;
         if (jst->struct_decl == NULL) {
             size_t ntypes = jl_datatype_nfields(jst);
             if (ntypes == 0 || jst->size == 0)
@@ -979,7 +989,8 @@ static Type *julia_struct_to_llvm(jl_value_t *jt, bool *isboxed)
                 if (jl_field_isptr(jst, i))
                     lty = T_pjlvalue;
                 else
-                    lty = ty==(jl_value_t*)jl_bool_type ? T_int8 : julia_type_to_llvm(ty);
+                    fprintf(stderr, "[RC]\n"),
+                    lty = ty==(jl_value_t*)jl_bool_type ? T_int8 : julia_type_to_llvm(ty, NULL, createvector);
                 if (lasttype != NULL && lasttype != lty)
                     isvector = false;
                 lasttype = lty;
@@ -992,14 +1003,23 @@ static Type *julia_struct_to_llvm(jl_value_t *jt, bool *isboxed)
             }
             else {
                 if (isvector && lasttype != T_int1 && !type_is_ghost(lasttype)) {
-                    // TODO: currently we get LLVM assertion failures for other vector sizes
-                    bool validVectorSize = (ntypes == 2 || ntypes == 4 || ntypes == 6);
-                    if (0 && lasttype->isSingleValueType() && !lasttype->isVectorTy() && validVectorSize) // currently disabled due to load/store alignment issues
+                    if (createvector) {
+                        fprintf(stderr,
+                            "[julia_struct_to_llvm(type.name=%s): vector]\n",
+                            jl_symbol_name(jst->name->name));
                         jst->struct_decl = VectorType::get(lasttype, ntypes);
-                    else
+                    }
+                    else {
+                        fprintf(stderr,
+                            "[julia_struct_to_llvm(type.name=%s): array]\n",
+                            jl_symbol_name(jst->name->name));
                         jst->struct_decl = ArrayType::get(lasttype, ntypes);
+                    }
                 }
                 else {
+                    fprintf(stderr,
+                        "[julia_struct_to_llvm(type.name=%s): struct]\n",
+                        jl_symbol_name(jst->name->name));
                     jst->struct_decl = StructType::get(jl_LLVMContext,ArrayRef<Type*>(&latypes[0],ntypes));
                 }
             }

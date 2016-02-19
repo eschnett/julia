@@ -7,6 +7,7 @@
 #include <string.h>
 #include <stdarg.h>
 #include <assert.h>
+#include <stdio.h> // TODO
 #include "julia.h"
 #include "julia_internal.h"
 #include "ia_misc.h"
@@ -601,6 +602,7 @@ JL_DLLEXPORT jl_datatype_t *jl_new_uninitialized_datatype(size_t nfields, int8_t
     // corruption otherwise.
     t->fielddesc_type = fielddesc_type;
     t->nfields = nfields;
+    t->isvector = 0;
     t->haspadding = 0;
     t->pointerfree = 0;
     return t;
@@ -701,6 +703,15 @@ JL_DLLEXPORT jl_datatype_t *jl_new_datatype(jl_sym_t *name, jl_datatype_t *super
     t->ditype = NULL;
     t->size = 0;
     t->alignment = 1;
+    if (jl_is_symbol(name) &&
+            !strcmp(jl_symbol_name((jl_sym_t*)name), "Vec2")) {
+        fprintf(stderr, "[jl_new_datatype(name=%s): isvector=1]\n",
+            jl_symbol_name((jl_sym_t*)name));
+        t->isvector = 1;
+    }
+    else {
+        t->isvector = 0;
+    }
     t->haspadding = 0;
 
     if (tn == NULL) {
@@ -718,6 +729,8 @@ JL_DLLEXPORT jl_datatype_t *jl_new_datatype(jl_sym_t *name, jl_datatype_t *super
         t->name = tn;
         jl_gc_wb(t, t->name);
     }
+    fprintf(stderr, "[jl_new_datatype: name=%s, isvector=%d addr=%p]\n",
+        jl_symbol_name(t->name->name), t->isvector, t);
     t->name->names = fnames;
     jl_gc_wb(t->name, t->name->names);
 

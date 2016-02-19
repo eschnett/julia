@@ -303,7 +303,8 @@ static Value *V_null;
 static Type *NoopType;
 static Value *literal_pointer_val(jl_value_t *p);
 extern "C" {
-JL_DLLEXPORT Type *julia_type_to_llvm(jl_value_t *jt, bool *isboxed=NULL);
+JL_DLLEXPORT Type *julia_type_to_llvm(jl_value_t *jt, bool *isboxed=NULL,
+    bool createvector=false);
 }
 static bool type_is_ghost(Type *ty)
 {
