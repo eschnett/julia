@@ -126,7 +126,7 @@ export
     SimpleVector, AbstractArray, DenseArray,
     # special objects
     Box, Function, Builtin, IntrinsicFunction, LambdaInfo, Method, MethodTable,
-    Module, Symbol, Task, Array, WeakRef,
+    Module, Symbol, Task, Array, WeakRef, VecElement,
     # numeric types
     Number, Real, Integer, Bool, Ref, Ptr,
     AbstractFloat, Float16, Float32, Float64,
@@ -300,6 +300,10 @@ TypeVar(n::Symbol, lb::ANY, ub::ANY, b::Bool) =
 TypeConstructor(p::ANY, t::ANY) = ccall(:jl_new_type_constructor, Any, (Any, Any), p::SimpleVector, t::Type)
 
 Void() = nothing
+
+immutable VecElement{T}
+    value::T
+end
 
 Expr(args::ANY...) = _expr(args...)
 
