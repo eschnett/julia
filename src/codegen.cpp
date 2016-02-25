@@ -4175,7 +4175,7 @@ static Function *gen_jlcall_wrapper(jl_lambda_info_t *lam, jl_expr_t *ast, Funct
         if (lty != NULL && !isboxed) {
             theArg = builder.CreatePointerCast(theArg, PointerType::get(lty,0));
             if (!lty->isAggregateType()) // keep "aggregate" type values in place as pointers
-                theArg = builder.CreateLoad(theArg);
+                theArg = builder.CreateAlignedLoad(theArg, julia_alignment(theArg, ty, 0));
         }
         assert(dyn_cast<UndefValue>(theArg) == NULL);
         args[idx] = theArg;

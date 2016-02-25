@@ -909,6 +909,12 @@ static Value *julia_binding_gv(jl_binding_t *b)
     return julia_binding_gv(bv);
 }
 
+static int is_vecelement_type(jl_value_t* t)
+{
+    assert(jl_is_datatype(t));
+    return ((jl_datatype_t*)(t))->name == jl_vecelement_typename;
+}
+
 // --- mapping between julia and llvm types ---
 
 static Type *julia_struct_to_llvm(jl_value_t *jt, bool *isboxed);
@@ -999,13 +1005,17 @@ static Type *julia_struct_to_llvm(jl_value_t *jt, bool *isboxed)
                 latypes.push_back(lty);
             }
             if (!isTuple) {
-                structdecl->setBody(latypes);
+                if (is_vecelement_type(jt))
+                    // VecElement type is unwrapped in LLVM
+                    jst->struct_decl = latypes[0];
+                else
+                    structdecl->setBody(latypes);
             }
             else {
                 if (isvector && lasttype != T_int1 && !type_is_ghost(lasttype)) {
                     // TODO: currently we get LLVM assertion failures for other vector sizes
-                    bool validVectorSize = (ntypes == 2 || ntypes == 4 || ntypes == 6);
-                    if (0 && lasttype->isSingleValueType() && !lasttype->isVectorTy() && validVectorSize) // currently disabled due to load/store alignment issues
+                    bool validVectorSize = (ntypes == 2 || ntypes == 4 || ntypes == 8 || ntypes == 16);
+                    if (lasttype->isSingleValueType() && !lasttype->isVectorTy() && validVectorSize && is_vecelement_type(jl_svecref(jst->types,0)))
                         jst->struct_decl = VectorType::get(lasttype, ntypes);
                     else
                         jst->struct_decl = ArrayType::get(lasttype, ntypes);
@@ -1049,7 +1059,7 @@ static bool is_tupletype_homogeneous(jl_svec_t *t)
 static bool deserves_sret(jl_value_t *dt, Type *T)
 {
     assert(jl_is_datatype(dt));
-    return (size_t)jl_datatype_size(dt) > sizeof(void*) && !T->isFloatingPointTy();
+    return (size_t)jl_datatype_size(dt) > sizeof(void*) && !T->isFloatingPointTy() && !T->isVectorTy();
 }
 
 // --- generating various field accessors ---
@@ -1375,10 +1385,20 @@ static Value *emit_bounds_check(const jl_cgval_t &ainfo, jl_value_t *ty, Value *
 
 // --- loading and storing ---
 
+// If given alignment is 0 and LLVM's assumed alignment for a load/store via ptr
+// is stricter than the Julia alignment for jltype, return the alignment of jltype.
+// Otherwise return the given alignment.
+static unsigned julia_alignment(Value *ptr, jl_value_t *jltype, unsigned alignment) {
+    if (ptr->getType()->getContainedType(0)->isVectorTy() && !alignment)
+        return ((jl_datatype_t*)jltype)->alignment; // prevent llvm from assuming 32 byte alignment of vectors
+    else
+        return alignment;
+}
+
 static Value *emit_unbox(Type *to, const jl_cgval_t &x, jl_value_t *jt);
 
 static jl_cgval_t typed_load(Value *ptr, Value *idx_0based, jl_value_t *jltype,
-                             jl_codectx_t *ctx, MDNode *tbaa, size_t alignment = 0)
+                             jl_codectx_t *ctx, MDNode *tbaa, unsigned alignment = 0)
 {
     bool isboxed;
     Type *elty = julia_type_to_llvm(jltype, &isboxed);
@@ -1403,9 +1423,7 @@ static jl_cgval_t typed_load(Value *ptr, Value *idx_0based, jl_value_t *jltype,
     //    elt = data;
     //}
     //else {
-        if (data->getType()->getContainedType(0)->isVectorTy() && !alignment)
-            alignment = ((jl_datatype_t*)jltype)->alignment; // prevent llvm from assuming 32 byte alignment of vectors
-        Instruction *load = builder.CreateAlignedLoad(data, alignment, false);
+        Instruction *load = builder.CreateAlignedLoad(data, julia_alignment(data, jltype, alignment), false);
         if (tbaa) {
             elt = tbaa_decorate(tbaa, load);
         }
@@ -1424,7 +1442,7 @@ static jl_cgval_t typed_load(Value *ptr, Value *idx_0based, jl_value_t *jltype,
 static void typed_store(Value *ptr, Value *idx_0based, const jl_cgval_t &rhs,
                         jl_value_t *jltype, jl_codectx_t *ctx, MDNode *tbaa,
                         Value *parent,  // for the write barrier, NULL if no barrier needed
-                        size_t alignment = 0)
+                        unsigned alignment = 0)
 {
     Type *elty = julia_type_to_llvm(jltype);
     assert(elty != NULL);
@@ -1446,9 +1464,7 @@ static void typed_store(Value *ptr, Value *idx_0based, const jl_cgval_t &rhs,
         data = builder.CreateBitCast(ptr, PointerType::get(elty, 0));
     else
         data = ptr;
-    if (data->getType()->getContainedType(0)->isVectorTy() && !alignment)
-        alignment = ((jl_datatype_t*)jltype)->alignment; // prevent llvm from assuming 32 byte alignment of vectors
-    Instruction *store = builder.CreateAlignedStore(r, builder.CreateGEP(data, idx_0based), alignment);
+    Instruction *store = builder.CreateAlignedStore(r, builder.CreateGEP(data, idx_0based), julia_alignment(data, jltype, alignment));
     if (tbaa)
         tbaa_decorate(tbaa, store);
 }
@@ -1681,8 +1697,13 @@ static jl_cgval_t emit_getfield_knownidx(const jl_cgval_t &strct, unsigned idx, 
         return fieldval;
     }
     else {
-        assert(strct.V->getType()->isVectorTy());
-        fldv = builder.CreateExtractElement(strct.V, ConstantInt::get(T_int32, idx));
+        if ( strct.V->getType()->isVectorTy() ) {
+            fldv = builder.CreateExtractElement(strct.V, ConstantInt::get(T_int32, idx));
+        } else {
+            // VecElement types are unwrapped in LLVM.
+            assert( strct.V->getType()->isSingleValueType() );
+            fldv = strct.V;
+        }
         if (jfty == (jl_value_t*)jl_bool_type) {
             fldv = builder.CreateTrunc(fldv, T_int1);
         }
@@ -2238,8 +2259,13 @@ static jl_cgval_t emit_new_struct(jl_value_t *ty, size_t nargs, jl_value_t **arg
                         fval = builder.CreateZExt(fval, T_int8);
                     if (lt->isVectorTy())
                         strct = builder.CreateInsertElement(strct, fval, ConstantInt::get(T_int32,idx));
-                    else
+                    else if (lt->isAggregateType())
                         strct = builder.CreateInsertValue(strct, fval, ArrayRef<unsigned>(&idx,1));
+                    else {
+                        // Must be a VecElement type, which comes unwrapped in LLVM.
+                        assert(is_vecelement_type(ty));
+                        strct = fval;
+                    }
                 }
                 idx++;
             }
