@@ -4,7 +4,7 @@ typealias Vec{N,T} NTuple{N,Base.VecElement{T}}
 
 # Crash report for #15244 motivated this test.
 @generated function thrice_iota{N,T}(::Type{Vec{N,T}})
-    Expr(:tuple, [:(Base.VecElement(3*$i)) for i in 1:N]...)
+    :(tuple($([:(Base.VecElement(3*$i)) for i in 1:N]...)))
 end
 
 function call_iota(N)
