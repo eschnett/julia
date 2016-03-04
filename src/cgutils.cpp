@@ -1678,6 +1678,10 @@ static jl_cgval_t emit_getfield_knownidx(const jl_cgval_t &strct, unsigned idx, 
         }
     }
     else if (strct.ispointer) { // something stack allocated
+        if (is_vecelement_type((jl_value_t*)jt)) {
+            // VecElement types are unwrapped in LLVM.
+            return strct;
+        }
         Value *addr = builder.CreateConstInBoundsGEP2_32(
             LLVM37_param(julia_type_to_llvm(strct.typ))
             strct.V, 0, idx);
@@ -1687,7 +1691,7 @@ static jl_cgval_t emit_getfield_knownidx(const jl_cgval_t &strct, unsigned idx, 
         return fieldval;
     }
     else {
-        if ( strct.V->getType()->isVectorTy() ) {
+        if (strct.V->getType()->isVectorTy()) {
             fldv = builder.CreateExtractElement(strct.V, ConstantInt::get(T_int32, idx));
         } else {
             // VecElement types are unwrapped in LLVM.
