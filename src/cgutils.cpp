@@ -1386,13 +1386,17 @@ static Value *emit_bounds_check(const jl_cgval_t &ainfo, jl_value_t *ty, Value *
 // --- loading and storing ---
 
 // If given alignment is 0 and LLVM's assumed alignment for a load/store via ptr
-// is stricter than the Julia alignment for jltype, return the alignment of jltype.
+// might be stricter than the Julia alignment for jltype, return the alignment of jltype.
 // Otherwise return the given alignment.
-static unsigned julia_alignment(Value *ptr, jl_value_t *jltype, unsigned alignment) {
-    if (ptr->getType()->getContainedType(0)->isVectorTy() && !alignment)
-        return ((jl_datatype_t*)jltype)->alignment; // prevent llvm from assuming 32 byte alignment of vectors
-    else
-        return alignment;
+//
+// Parameter ptr should be the pointer argument for the LoadInst or StoreInst.
+// It is currently unused, but might be used in the future for a more precise answer.
+static unsigned julia_alignment(Value* /*ptr*/, jl_value_t *jltype, unsigned alignment) {
+    if (!alignment && ((jl_datatype_t*)jltype)->size >= 32) {
+        // Type might contain a 32-byte vector.  Use Julia alignment to prevent llvm from assuming default alignment.
+        return ((jl_datatype_t*)jltype)->alignment;
+    }
+    return alignment;
 }
 
 static Value *emit_unbox(Type *to, const jl_cgval_t &x, jl_value_t *jt);
@@ -1464,7 +1468,7 @@ static void typed_store(Value *ptr, Value *idx_0based, const jl_cgval_t &rhs,
         data = builder.CreateBitCast(ptr, PointerType::get(elty, 0));
     else
         data = ptr;
-    Instruction *store = builder.CreateAlignedStore(r, builder.CreateGEP(data, idx_0based), julia_alignment(data, jltype, alignment));
+    Instruction *store = builder.CreateAlignedStore(r, builder.CreateGEP(data, idx_0based), julia_alignment(r, jltype, alignment));
     if (tbaa)
         tbaa_decorate(tbaa, store);
 }
@@ -1678,11 +1682,8 @@ static jl_cgval_t emit_getfield_knownidx(const jl_cgval_t &strct, unsigned idx, 
         }
         else {
             int align = jl_field_offset(jt,idx);
-            if (align & 1) align = 1;
-            else if (align & 2) align = 2;
-            else if (align & 4) align = 4;
-            else if (align & 8) align = 8;
-            else align = 16;
+            align |= 16;
+            align &= -align;
             return typed_load(addr, ConstantInt::get(T_size, 0), jfty, ctx, tbaa, align);
         }
     }
@@ -2217,11 +2218,8 @@ static void emit_setfield(jl_datatype_t *sty, const jl_cgval_t &strct, size_t id
         }
         else {
             int align = jl_field_offset(sty, idx0);
-            if (align & 1) align = 1;
-            else if (align & 2) align = 2;
-            else if (align & 4) align = 4;
-            else if (align & 8) align = 8;
-            else align = 16;
+            align |= 16;
+            align &= -align;
             typed_store(addr, ConstantInt::get(T_size, 0), rhs, jfty, ctx, sty->mutabl ? tbaa_user : tbaa_immut, data_pointer(strct, ctx, T_pjlvalue), align);
         }
     }
