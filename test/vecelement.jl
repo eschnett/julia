@@ -27,3 +27,19 @@ unpeel(x) = x.elts[1].value
 
 @test unpeel(Bunch{2,Float64}((Base.VecElement(5.0),
                                Base.VecElement(4.0)))) === 5.0
+
+immutable Herd{N,T}
+    elts::NTuple{N,Base.VecElement{T}}
+    Herd(elts::NTuple{N,T}) = new(ntuple(i->Base.VecElement{T}(elts[i]), N))
+end
+
+function check{N,T}(x::Herd{N,T})
+    for i=1:N
+        @test x.elts[i].value === N*N+i-1
+    end
+end
+
+check(Herd{1,Int}((1,)))
+check(Herd{2,Int}((4,5)))
+check(Herd{4,Int}((16,17,18,19)))
+
