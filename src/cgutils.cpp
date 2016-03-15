@@ -1688,13 +1688,14 @@ static jl_cgval_t emit_getfield_knownidx(const jl_cgval_t &strct, unsigned idx, 
         }
     }
     else if (strct.ispointer) { // something stack allocated
-        if (is_vecelement_type((jl_value_t*)jt)) {
+        Value *addr;
+        if (is_vecelement_type((jl_value_t*)jt))
             // VecElement types are unwrapped in LLVM.
-            return strct;
-        }
-        Value *addr = builder.CreateConstInBoundsGEP2_32(
-            LLVM37_param(julia_type_to_llvm(strct.typ))
-            strct.V, 0, idx);
+            addr = strct.V;
+        else
+            addr = builder.CreateConstInBoundsGEP2_32(
+                LLVM37_param(julia_type_to_llvm(strct.typ))
+                strct.V, 0, idx);
         assert(!jt->mutabl);
         jl_cgval_t fieldval = mark_julia_slot(addr, jfty);
         fieldval.isimmutable = strct.isimmutable;
