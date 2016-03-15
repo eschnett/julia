@@ -1388,6 +1388,10 @@ static unsigned julia_alignment(Value* /*ptr*/, jl_value_t *jltype, unsigned ali
     return alignment;
 }
 
+static LoadInst *build_load (Value *ptr, jl_value_t *jltype) {
+    return builder.CreateAlignedLoad(ptr, julia_alignment(ptr, jltype, 0));
+}
+
 static Value *emit_unbox(Type *to, const jl_cgval_t &x, jl_value_t *jt);
 
 static jl_cgval_t typed_load(Value *ptr, Value *idx_0based, jl_value_t *jltype,
@@ -2027,7 +2031,7 @@ static Value *boxed(const jl_cgval_t &vinfo, jl_codectx_t *ctx, bool gcrooted)
     assert(!type_is_ghost(t)); // should have been handled by isghost above!
 
     if (vinfo.ispointer)
-        v = builder.CreateLoad(builder.CreatePointerCast(v, t->getPointerTo()));
+        v = build_load( builder.CreatePointerCast(v, t->getPointerTo()), vinfo.typ );
 
     if (t == T_int1)
         return julia_bool(v);
