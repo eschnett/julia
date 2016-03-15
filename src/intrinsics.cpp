@@ -308,7 +308,7 @@ static Value *emit_unbox(Type *to, const jl_cgval_t &x, jl_value_t *jt)
     if (x.isboxed)
         return builder.CreateAlignedLoad(p, 16); // julia's gc gives 16-byte aligned addresses
     else if (jt)
-        return builder.CreateAlignedLoad(p, julia_alignment(p, jt, 0));
+        return build_load(p, jt);
     else
         // stack has default alignment
         return builder.CreateLoad(p);
