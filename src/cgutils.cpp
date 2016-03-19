@@ -1002,9 +1002,7 @@ static Type *julia_struct_to_llvm(jl_value_t *jt, bool *isboxed)
             }
             else {
                 if (isvector && lasttype != T_int1 && !type_is_ghost(lasttype)) {
-                    // TODO: currently we get LLVM assertion failures for other vector sizes
-                    bool validVectorSize = (ntypes == 2 || ntypes == 4 || ntypes == 8 || ntypes == 16);
-                    if (lasttype->isSingleValueType() && !lasttype->isVectorTy() && validVectorSize && is_vecelement_type(jl_svecref(jst->types,0)))
+                    if (lasttype->isSingleValueType() && !lasttype->isVectorTy() && is_vecelement_type(jl_svecref(jst->types,0)))
                         jst->struct_decl = VectorType::get(lasttype, ntypes);
                     else
                         jst->struct_decl = ArrayType::get(lasttype, ntypes);
@@ -1381,7 +1379,7 @@ static Value *emit_bounds_check(const jl_cgval_t &ainfo, jl_value_t *ty, Value *
 // Parameter ptr should be the pointer argument for the LoadInst or StoreInst.
 // It is currently unused, but might be used in the future for a more precise answer.
 static unsigned julia_alignment(Value* /*ptr*/, jl_value_t *jltype, unsigned alignment) {
-    if (!alignment && ((jl_datatype_t*)jltype)->size >= 32) {
+    if (!alignment && ((jl_datatype_t*)jltype)->size > 16) {
         // Type might contain a 32-byte vector.  Use Julia alignment to prevent llvm from assuming default alignment.
         return ((jl_datatype_t*)jltype)->alignment;
     }
