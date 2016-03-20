@@ -1,0 +1,71 @@
+--- a/lib/CodeGen/SelectionDAG/LegalizeVectorTypes.cpp	2015-09-14 06:40:55.000000000 -0400
++++ b/lib/CodeGen/SelectionDAG/LegalizeVectorTypes.cpp	2016-03-20 15:12:41.000000000 -0400
+@@ -3264,23 +3264,26 @@
+                           DAG.getConstant(Increment, dl, BasePtr.getValueType()));
+ 
+     SDValue L;
++    unsigned size;
+     if (LdWidth < NewVTWidth) {
+       // Our current type we are using is too large, find a better size
+       NewVT = FindMemType(DAG, TLI, LdWidth, WidenVT, LdAlign, WidthDiff);
+       NewVTWidth = NewVT.getSizeInBits();
++      assert(LdWidth + WidthDiff >= NewVTWidth);
+       L = DAG.getLoad(NewVT, dl, Chain, BasePtr,
+                       LD->getPointerInfo().getWithOffset(Offset), isVolatile,
+                       isNonTemporal, isInvariant, MinAlign(Align, Increment),
+                       AAInfo);
++      size = L->getValueSizeInBits(0);
+       LdChain.push_back(L.getValue(1));
+       if (L->getValueType(0).isVector()) {
+         SmallVector<SDValue, 16> Loads;
+         Loads.push_back(L);
+-        unsigned size = L->getValueSizeInBits(0);
+         while (size < LdOp->getValueSizeInBits(0)) {
+           Loads.push_back(DAG.getUNDEF(L->getValueType(0)));
+           size += L->getValueSizeInBits(0);
+         }
++        assert(size == LdOp->getValueSizeInBits(0));
+         L = DAG.getNode(ISD::CONCAT_VECTORS, dl, LdOp->getValueType(0), Loads);
+       }
+     } else {
+@@ -3288,13 +3291,13 @@
+                       LD->getPointerInfo().getWithOffset(Offset), isVolatile,
+                       isNonTemporal, isInvariant, MinAlign(Align, Increment),
+                       AAInfo);
++      size = L.getValueType().getSizeInBits();
+       LdChain.push_back(L.getValue(1));
+     }
+ 
+     LdOps.push_back(L);
+ 
+-
+-    LdWidth -= NewVTWidth;
++    LdWidth -= size;
+   }
+ 
+   // Build the vector from the loads operations
+@@ -3311,7 +3314,7 @@
+   int Idx = End;
+   EVT LdTy = LdOps[i].getValueType();
+   // First combine the scalar loads to a vector
+-  if (!LdTy.isVector())  {
++  if (!LdTy.isVector()) {
+     for (--i; i >= 0; --i) {
+       LdTy = LdOps[i].getValueType();
+       if (LdTy.isVector())
+@@ -3332,12 +3335,14 @@
+     ConcatOps[--Idx] = LdOps[i];
+   }
+ 
+-  if (WidenWidth == LdTy.getSizeInBits()*(End - Idx))
++  assert(WidenWidth >= LdTy.getSizeInBits() * (End - Idx));
++  if (WidenWidth == LdTy.getSizeInBits() * (End - Idx))
+     return DAG.getNode(ISD::CONCAT_VECTORS, dl, WidenVT,
+                        makeArrayRef(&ConcatOps[Idx], End - Idx));
+ 
+   // We need to fill the rest with undefs to build the vector
+   unsigned NumOps = WidenWidth / LdTy.getSizeInBits();
++  assert(End-Idx < NumOps);
+   SmallVector<SDValue, 16> WidenOps(NumOps);
+   SDValue UndefVal = DAG.getUNDEF(LdTy);
+   {
