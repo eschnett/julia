@@ -9,7 +9,9 @@ end
 
 function call_iota(N)
     x = thrice_iota(Vec{N,Float32})
-    @test x[1].value+x[N].value === 3+3*N
+    if N > 0
+        @test x[1].value+x[N].value === 3+3*N
+    end
 end
 
 call_iota(2)
@@ -47,3 +49,11 @@ end
 check(Herd{1,Int}((1,)))
 check(Herd{2,Int}((4,5)))
 check(Herd{4,Int}((16,17,18,19)))
+
+for T in (Int8, Int16, Int32, Int64, Int128,
+          UInt8, UInt16, UInt32, UInt64, UInt128,
+          Float16, Float32, Float64)
+    for i in 0:100
+        check(Herd{i,T}(map(T, tuple(collect(1:i)...)))
+    end
+end
