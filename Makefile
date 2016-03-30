@@ -279,6 +279,9 @@ endif
 ifeq ($(USE_SYSTEM_LIBGIT2),0)
 JL_PRIVATE_LIBS += git2
 endif
+ifeq ($(USE_SYSTEM_LIBSSH2),0)
+JL_PRIVATE_LIBS += ssh2
+endif
 ifeq ($(USE_SYSTEM_ARPACK),0)
 JL_PRIVATE_LIBS += arpack
 endif

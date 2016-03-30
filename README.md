@@ -262,7 +262,7 @@ Building Julia requires that the following software be installed:
 - **[wget]**, **[curl]**, or **[fetch]** (FreeBSD) — to automatically download external libraries.
 - **[m4]**                      — needed to build GMP.
 - **[patch]**                   — for modifying source code.
-- **[cmake]**                   — needed to build `libgit2`.
+- **[cmake]**                   — needed to build `libgit2` and `libssh2`.
 - **[openssl]**                 — needed for HTTPS support in `libgit2` on Linux, install via `apt-get install libssl-dev` or `yum install openssl-devel`.
 
 Julia uses the following external libraries, which are automatically downloaded (or in a few cases, included in the Julia source repository) and then compiled from source the first time you run `make`:
@@ -284,6 +284,7 @@ Julia uses the following external libraries, which are automatically downloaded 
 - **[GMP]** (>= 5.0)         — GNU multiple precision arithmetic library, needed for `BigInt` support.
 - **[MPFR]** (>= 3.0)        — GNU multiple precision floating point library, needed for arbitrary precision floating point (`BigFloat`) support.
 - **[libgit2]** (>= 0.21)    — Git linkable library, used by Julia's package manager
+- **[libssh2]** (>= 1.7.0)   — ssh linkable library, used by Julia's package manager
 - **[utf8proc]** (>= 1.3)    — a library for processing UTF-8 encoded Unicode strings
 - **[libosxunwind]**         — clone of [libunwind], a library that determines the call-chain of a program
 - **[Rmath-julia]**          — library for commonly used statistical functions from the R project.
@@ -320,6 +321,7 @@ For a longer overview of Julia's dependencies, see these [slides](https://github
 [double-conversion]: http://double-conversion.googlecode.com
 [libuv]:        https://github.com/JuliaLang/libuv
 [libgit2]:      https://libgit2.github.com/
+[libssh2]:      https://libssh2.github.com/
 [utf8proc]:     http://julialang.org/utf8proc/
 [libosxunwind]: https://github.com/JuliaLang/libosxunwind
 [libunwind]:    http://www.nongnu.org/libunwind

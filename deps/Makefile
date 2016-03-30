@@ -20,7 +20,7 @@ include $(SRCDIR)/llvm-ver.make
 # autoconf configure-driven scripts: llvm pcre arpack fftw unwind gmp mpfr patchelf libuv git
 # custom Makefile rules: openlibm Rmath-julia dsfmt suitesparse-wrapper suitesparse lapack openblas utf8proc objconv osxunwind
 # entirely custom: virtualenv
-# CMake libs: libgit2
+# CMake libs: libgit2 libssh2
 #
 # downloaded from git: llvm-svn, libuv, libopenlibm, utf8proc, openspecfun, libgit2
 #
@@ -168,6 +168,10 @@ ifeq ($(USE_SYSTEM_LIBGIT2), 0)
 STAGE1_DEPS += libgit2
 endif
 
+ifeq ($(USE_SYSTEM_LIBSSH2), 0)
+STAGE1_DEPS += libssh2
+endif
+
 ifeq ($(USE_SYSTEM_MPFR), 0)
 STAGE2_DEPS += mpfr
 endif
@@ -215,7 +219,7 @@ install: $(addprefix install-, $(DEP_LIBS))
 cleanall: $(addprefix clean-, $(DEP_LIBS))
 distcleanall: $(addprefix distclean-, $(DEP_LIBS))
 	rm -rf $(build_prefix)
-getall: get-llvm get-libuv get-pcre get-openlibm get-openspecfun get-dsfmt get-Rmath-julia get-openblas get-lapack get-fftw get-suitesparse get-arpack get-unwind get-osxunwind get-gmp get-mpfr get-patchelf get-utf8proc get-virtualenv get-objconv get-libgit2
+getall: get-llvm get-libuv get-pcre get-openlibm get-openspecfun get-dsfmt get-Rmath-julia get-openblas get-lapack get-fftw get-suitesparse get-arpack get-unwind get-osxunwind get-gmp get-mpfr get-patchelf get-utf8proc get-virtualenv get-objconv get-libgit2 get-libssh2
 
 ## PATHS ##
 # sort is used to remove potential duplicates
@@ -2134,6 +2138,65 @@ configure-libgit2: $(BUILDDIR)/$(LIBGIT2_SRC_DIR)/Makefile
 compile-libgit2: $(LIBGIT2_OBJ_SOURCE)
 check-libgit2: $(BUILDDIR)/$(LIBGIT2_SRC_DIR)/checked
 install-libgit2: $(LIBGIT2_OBJ_TARGET)
+
+## libssh2'
+
+# LIBSSH2_GIT_URL := git://github.com/libssh2/libssh2.git
+# LIBSSH2_TAR_URL = https://api.github.com/repos/libssh2/libssh2/tarball/$1
+# $(eval $(call git-external,libssh2,LIBSSH2,CMakeLists.txt,build/libssh2.$(SHLIB_EXT),$(SRCDIR)/srccache))
+
+LIBSSH2_OBJ_SOURCE := $(BUILDDIR)/$(LIBSSH2_SRC_DIR)/libssh2.$(SHLIB_EXT)
+LIBSSH2_OBJ_TARGET := $(build_shlibdir)/libssh2.$(SHLIB_EXT)
+
+LIBSSH2_OPTS := $(CMAKE_COMMON)
+ifeq ($(OS),WINNT)
+LIBSSH2_OPTS += -DWIN32=ON -DMINGW=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
+ifneq ($(ARCH),x86_64)
+LIBSSH2_OPTS += -DCMAKE_C_FLAGS="-mincoming-stack-boundary=2"
+endif
+ifeq ($(BUILD_OS),WINNT)
+LIBSSH2_OPTS += -G"MSYS Makefiles"
+else
+LIBSSH2_OPTS += -DDLLTOOL=`which $(CROSS_COMPILE)dlltool`
+LIBSSH2_OPTS += -DCMAKE_FIND_ROOT_PATH=/usr/$(XC_HOST) -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY
+endif
+else
+LIBSSH2_OPTS += -DCMAKE_BUILD_TYPE=Release
+endif
+
+$(SRCDIR)/srccache/libssh2-$(LIBSSH2_VER).tar.gz: | $(SRCDIR)/srccache
+	$(JLDOWNLOAD) $@ http://www.libssh2.org/download/$(notdir $@)
+$(SRCDIR)/srccache/libssh2-$(LIBSSH2_VER)/CMakeLists.txt: $(SRCDIR)/srccache/libssh2-$(LIBSSH2_VER).tar.gz
+	$(JLCHECKSUM) $<
+	cd $(dir $<) && $(TAR) xzf $(notdir $<)
+	touch -c $@
+$(BUILDDIR)/libssh2-$(LIBSSH2_VER)/Makefile: $(SRCDIR)/srccache/libssh2-$(LIBSSH2_VER)/CMakeLists.txt
+	mkdir -p $(dir $@)
+	cd $(dir $@) && \
+	$(CMAKE) $(dir $<) $(LIBSSH2_OPTS)
+	touch -c $@
+$(LIBSSH2_OBJ_SOURCE): $(BUILDDIR)/libssh2-$(LIBSSH2_VER)/Makefile
+	$(MAKE) -C $(dir $<)
+	touch -c $@
+$(BUILDDIR)/libssh2-$(LIBSSH2_VER)/checked: $(LIBSSH2_OBJ_SOURCE)
+ifeq ($(OS),$(BUILD_OS))
+	$(MAKE) -C $(dir $@) test
+endif
+	echo 1 > $@
+$(LIBSSH2_OBJ_TARGET): $(LIBSSH2_OBJ_SOURCE) | $(build_shlibdir)
+	cp $< $@
+	@#$$(call make-install,libssh2-$(LIBSSH2_VER),) # currently don't need the full install
+	touch -c $@
+
+clean-libssh2:
+	-rm -rf $(BUILDDIR)/libssh2-$(LIBSSH2_VER)
+	-rm -f $(LIBSSH2_OBJ_TARGET)
+
+get-libssh2: $(SRCDIR)/srccache/libssh2-$(LIBSSH2_VER).tar.gz
+configure-libssh2: $(BUILDDIR)/libssh2-$(LIBSSH2_VER)/Makefile
+compile-libssh2: $(LIBSSH2_OBJ_SOURCE)
+check-libssh2: $(BUILDDIR)/libssh2-$(LIBSSH2_VER)/checked
+install-libssh2: $(LIBSSH2_OBJ_TARGET)
 
 ## phony targets ##
 
